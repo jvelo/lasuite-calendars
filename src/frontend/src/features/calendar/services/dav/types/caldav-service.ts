@@ -191,9 +191,16 @@ export type FreeBusyResponse = {
 // Response Types
 // ============================================================================
 
+/**
+ * Stable reason for a failed operation. Callers can branch on it without
+ * parsing the error message, e.g. to show a translated message.
+ */
+export type CalDavErrorCode = "unsupported-timezone";
+
 export type CalDavResponse<T = void> = {
   success: boolean;
   data?: T;
   error?: string;
   status?: number;
+  code?: CalDavErrorCode;
 };

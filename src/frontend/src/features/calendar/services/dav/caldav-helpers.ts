@@ -4,7 +4,9 @@
  * Factorized utilities for XML building, DAV requests, and error handling.
  */
 
-import type { SharePrivilege, CalDavResponse } from "./types/caldav-service";
+import type { IcsEvent } from "ts-ics";
+
+import type { SharePrivilege, CalDavErrorCode, CalDavResponse } from "./types/caldav-service";
 
 /** XML namespace prefix lookup used when building prop keys in PROPFIND
  * bodies. Mirrors what tsdav's `DAVNamespaceShort` used to provide; kept
@@ -489,28 +491,59 @@ export function getCalendarUrlFromEventUrl(eventUrl: string): string {
 // Result wrapper
 // ============================================================================
 
-/** Error type that preserves an HTTP status code through `asResult`.
+/** Error type that preserves an HTTP status code and an error code
+ * through `asResult`.
  *
  * Throw this (instead of a bare `Error`) when a DAV call fails so the
- * caller's `CalDavResponse.status` is populated. Lets callers branch on
- * the HTTP status (e.g. retry on 412) without parsing error strings.
+ * caller's `CalDavResponse.status` and `code` are populated. Lets
+ * callers branch on the HTTP status (e.g. retry on 412) or the code
+ * without parsing error strings.
  */
 export class DavCallError extends Error {
   readonly status?: number;
-  constructor(message: string, status?: number) {
+  readonly code?: CalDavErrorCode;
+  constructor(message: string, status?: number, code?: CalDavErrorCode) {
     super(message);
     this.name = "DavCallError";
     this.status = status;
+    this.code = code;
   }
 }
 
-/** Build a `DavCallError` from a failed `davRequest` result. */
+/**
+ * Whether Intl can convert dates in a timezone. Old ICU builds and
+ * non-IANA names (e.g. "Romance Standard Time") make Intl throw.
+ */
+export const isTimezoneSupportedByIntl = (timezone: string): boolean => {
+  try {
+    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+/**
+ * Throw a `DavCallError` with code "unsupported-timezone" when Intl cannot
+ * convert the event's start timezone. Local dates computed in that
+ * timezone are then wrong. For example, an occurrence date falls back to
+ * UTC and no longer matches the event's dates.
+ * All-day events and events without a timezone pass.
+ */
+export const assertEventTimezoneSupported = (event: IcsEvent): void => {
+  if (event.start.type === "DATE") return;
+  const timezone = event.start.local?.timezone;
+  if (!timezone || isTimezoneSupportedByIntl(timezone)) return;
+  throw new DavCallError(`Unsupported timezone: ${timezone}`, undefined, "unsupported-timezone");
+};
+
+/** Build a `DavCallError` from a failed `davRequest` or `CalDavResponse`. */
 export function davFailure(
-  response: { error?: string; status?: number },
+  response: { error?: string; status?: number; code?: CalDavErrorCode },
   fallback: string,
 ): DavCallError {
   const message = response.error ?? `${fallback}: ${response.status}`;
-  return new DavCallError(message, response.status);
+  return new DavCallError(message, response.status, response.code);
 }
 
 /** Run an async operation and pack its outcome into a `CalDavResponse`.
@@ -534,11 +567,12 @@ export async function asResult<T>(
     return { success: true, data };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const status = error instanceof DavCallError ? error.status : undefined;
+    const { status, code } = error instanceof DavCallError ? error : {};
     return {
       success: false,
       error: `${errorPrefix}: ${message}`,
       status,
+      code,
     };
   }
 }
