@@ -1,12 +1,18 @@
 # sabre/dav CalDAV Server
 # Based on Debian with Apache and PHP. Pinned to 8.5 to match the
 # scalingo-26 (Ubuntu 26.04) production stack, whose only PHP is 8.5.
-FROM php:8.5-apache-bookworm
+FROM php:8.5.12-apache-bookworm@sha256:747123a8d7d28c6f84960df94cc076a406314e4f9d556af0bcfddab81e33bd09
 
 ENV DEBIAN_FRONTEND=noninteractive
 
+# APT layer is intentionally time-dependent: bump this date to bust the
+# cache and pull the latest Debian security patches (base image and
+# Composer are digest-pinned for reproducibility).
+ENV MIN_UPDATE_DATE="2026-10-21"
+
 # Install dependencies
-RUN apt-get update && apt-get install -y \
+RUN apt-get update && apt-get upgrade -y \
+    && apt-get install -y --no-install-recommends \
     libpq-dev \
     libonig-dev \
     postgresql-client \
@@ -21,8 +27,9 @@ RUN apt-get update && apt-get install -y \
 # invalid UTF-8 (or fatal).
 RUN docker-php-ext-install pdo pdo_pgsql mbstring
 
-# Install Composer
-COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
+# Install Composer (keep in sync with the Makefile and
+# bin/scalingo_postfrontend)
+COPY --from=composer:2.10.3@sha256:af98f42dfff7c68ba8d53c2164fd9fde1087b7d449514baa38c418b1f6bc4bac /usr/bin/composer /usr/bin/composer
 
 # Create application directory
 WORKDIR /var/www/sabredav

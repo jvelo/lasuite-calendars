@@ -227,8 +227,12 @@ class CalDAVProxyView(View):
         return None
 
     def dispatch(self, request, *args, **kwargs):  # noqa: PLR0912, PLR0911, PLR0915  # pylint: disable=too-many-branches,too-many-return-statements,too-many-statements,too-many-locals
-        """Forward all HTTP methods to CalDAV server."""
-        if request.method == "OPTIONS":
+        """Authenticate and forward to the CalDAV server; CORS preflights
+        and rejected requests are answered locally."""
+        if (
+            request.method == "OPTIONS"
+            and "HTTP_ACCESS_CONTROL_REQUEST_METHOD" in request.META
+        ):
             response = HttpResponse(status=200)
             response["Access-Control-Allow-Methods"] = ", ".join(
                 sorted(ALLOWED_PROXY_METHODS)
