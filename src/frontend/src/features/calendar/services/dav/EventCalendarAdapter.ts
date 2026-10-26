@@ -902,6 +902,12 @@ export class EventCalendarAdapter {
     // and DST transitions.
     const components = this.getDateComponentsInTimezone(date, tz);
 
+    // The components are UTC when Intl cannot resolve the timezone. Write
+    // the real instant in UTC, so that no TZID labels UTC wall-clock time.
+    if (this.failedIntlTimezones.has(`components:${tz}`)) {
+      return { type: "DATE-TIME", date };
+    }
+
     // Create a "fake UTC" date where UTC components = target timezone components.
     // ts-ics uses getUTCHours() to generate ICS, so this ensures correct output.
     const fakeUtcDate = new Date(
