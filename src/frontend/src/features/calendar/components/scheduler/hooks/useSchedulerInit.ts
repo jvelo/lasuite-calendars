@@ -14,6 +14,7 @@ import {
   List,
   Interaction,
 } from "@event-calendar/core";
+import { addErrorToast } from "@/features/ui/components/toaster/Toaster";
 import { useCalendarLocale } from "../../../hooks/useCalendarLocale";
 import { createEventContent, type EventContentInfo } from "../utils/eventContent";
 
@@ -115,6 +116,10 @@ export const useSchedulerInit = ({
 
   useEffect(() => {
     if (!containerRef.current || calendarRef.current || !isConnected) return;
+
+    // The fetch runs on every navigation; the fixed id keeps a single toast.
+    const notifyFetchEventsError = () =>
+      addErrorToast(t("calendar.error.fetchEvents"), { toastId: "fetch-events-error" });
 
     const ec = createCalendar(containerRef.current, [TimeGrid, DayGrid, List, Interaction], {
       // View configuration
@@ -234,6 +239,7 @@ export const useSchedulerInit = ({
                     `[useSchedulerInit] Failed to fetch events from ${calendar.url} (rendering it empty):`,
                     result.error,
                   );
+                  notifyFetchEventsError();
                   return [];
                 }
 
@@ -299,6 +305,7 @@ export const useSchedulerInit = ({
               // but log it: an empty calendar can mean a failed fetch, not an
               // empty one (issue #74).
               console.error("[useSchedulerInit] Error fetching events (rendering empty):", error);
+              notifyFetchEventsError();
               return [];
             }
           },
