@@ -13,9 +13,8 @@ Frontend (EventModal)
         → CalendarInvitationService (sends email)
           → Attendee receives email
             → RSVP link or iTIP client response
-              → RSVPView (Django) or CalDAV REPLY
+              → RSVPConfirmView (Django) or CalDAV REPLY
                 → PARTSTAT updated in event
-                  → Organizer notified
 ```
 
 ## Creating an event with attendees
@@ -87,12 +86,11 @@ Steps:
    | REPLY | any | `calendar_invitation_reply.html` |
 3. **RSVP tokens** — for REQUEST emails, generates signed URLs:
    ```
-   /rsvp/?token=<signed>&action=accepted
-   /rsvp/?token=<signed>&action=tentative
-   /rsvp/?token=<signed>&action=declined
+   {APP_URL}/rsvp/?t=<signed>
    ```
-   Tokens are signed with `django.core.signing.Signer(salt="rsvp")`
-   and contain `{uid, email, organizer}`.
+   One link per action (accepted, tentative, declined). Tokens are
+   signed with `django.core.signing.TimestampSigner(salt="rsvp")`
+   and contain `{u: uid, e: email, o: organizer, g: org id, a: action}`.
 4. **ICS attachment** — if `CALENDAR_ITIP_ENABLED=True`, the
    attachment includes `METHOD:REQUEST` for iTIP-aware clients
    (Outlook, Apple Mail). If False (default), the METHOD is stripped
@@ -108,18 +106,18 @@ Two paths:
 
 Attendee clicks Accept / Maybe / Decline link in the email.
 
-`RSVPView` handles `GET /rsvp/?token=...&action=accepted`:
+`RSVPConfirmView` handles `/rsvp/`:
 
-1. Unsigns the token (salt="rsvp")
-2. Finds the event in the organizer's CalDAV calendar by UID
-3. Checks the event is not in the past (recurring events are never
-   considered past)
-4. Updates the attendee's `PARTSTAT` to ACCEPTED / TENTATIVE / DECLINED
-5. PUTs the updated event back to CalDAV
-6. Renders a confirmation page
+1. `GET /rsvp/?t=...` renders a page that sends a POST automatically.
+   Thus link previewers cannot answer for the user.
+2. `POST /rsvp/` checks the token signature (salt="rsvp")
+3. Calls `POST /internal-api/rsvp/` on SabreDAV, which updates the
+   attendee's `PARTSTAT` to ACCEPTED / TENTATIVE / DECLINED
+4. Renders a confirmation page
 
-The PUT triggers SabreDAV to generate a REPLY message, which flows
-back through HttpCallbackIMipPlugin → Django → organizer email.
+The internal API writes the event directly to the CalDAV backend.
+SabreDAV scheduling does not run. Thus SabreDAV sends no REPLY, and
+the organizer gets no email.
 
 ### iTIP client response
 

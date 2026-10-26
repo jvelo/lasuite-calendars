@@ -16,10 +16,10 @@ RecurrenceEditor (React)
 ## RecurrenceEditor Component
 
 Located at
-`src/frontend/src/features/calendar/components/RecurrenceEditor.tsx`
+`src/frontend/src/features/calendar/components/scheduler/RecurrenceEditor.tsx`
 
 ```tsx
-import { RecurrenceEditor } from '@/features/calendar/components/RecurrenceEditor';
+import { RecurrenceEditor } from '@/features/calendar/components/scheduler';
 
 const [recurrence, setRecurrence] = useState<IcsRecurrenceRule>();
 

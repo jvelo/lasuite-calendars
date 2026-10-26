@@ -83,7 +83,7 @@ Django then:
      | `sender`      | `read-write`    |
      | `admin`       | `read-write`    |
 
-3. Calls `POST /internal-api/sync-mailbox-acls/` with `full_sync=true`
+3. Calls `POST /internal-api/sync-mailbox-acls/` with `full_sync_users` set to the user
    and the full list of desired shares. The endpoint computes a diff
    against existing `sync-managed` shares and applies minimal changes:
    - Batch-fetches all owner calendar instances in one query
@@ -102,7 +102,7 @@ No explicit address sync needed — the share IS the permission.
 
 **The source of truth for mailbox access is always the Messages API.**
 CalDAV shares tagged `sync-managed` are just a cache that gets refreshed
-on every app open. Manual shares (with a different `share_href`) are never
+on every app open. Manual shares (not flagged `is_sync_managed`) are never
 touched by the sync.
 
 **Recurring background sync**: schedule `sync_all_mailbox_acls` via cron
@@ -390,7 +390,8 @@ user's organization as before.
 ```bash
 FEATURE_MESSAGES_INTEGRATION=true   # Feature flag
 MESSAGES_API_URL=http://messages:8000  # Messages app API URL
-MESSAGES_API_KEY=<shared-secret>      # Sent as X-Service-Auth header
+MESSAGES_API_KEY=<shared-secret>      # Sent as X-API-Key header
+MESSAGES_CHANNEL_ID=<channel-id>      # Sent as X-Channel-Id header
 ```
 
 On the Messages side, the same secret is configured as `CALENDARS_API_KEY`.
