@@ -172,7 +172,38 @@ def test_delete_resource_cross_org_blocked():
         )
 
     assert response.status_code == HTTP_400_BAD_REQUEST
-    assert "different organization" in response.json()["detail"]
+    assert response.json() == {
+        "code": "resource_other_organization",
+        "detail": "Resource request failed.",
+    }
+
+    get_entitlements_backend.cache_clear()
+
+
+@pytest.mark.django_db
+@override_settings(
+    ENTITLEMENTS_BACKEND="core.entitlements.backends.local.LocalEntitlementsBackend",
+    ENTITLEMENTS_BACKEND_PARAMETERS={},
+    CALDAV_INTERNAL_API_KEY="",
+)
+def test_create_resource_hides_configuration_details():
+    """A configuration error does not show the setting name to the client."""
+    get_entitlements_backend.cache_clear()
+    admin = factories.UserFactory()
+
+    client = APIClient()
+    client.force_authenticate(user=admin)
+    response = client.post(
+        "/api/v1.0/resources/",
+        {"name": "Room 101", "resource_type": "ROOM"},
+        format="json",
+    )
+
+    assert response.status_code == HTTP_400_BAD_REQUEST
+    assert response.json() == {
+        "code": "resource_service_failed",
+        "detail": "Resource request failed.",
+    }
 
     get_entitlements_backend.cache_clear()
 

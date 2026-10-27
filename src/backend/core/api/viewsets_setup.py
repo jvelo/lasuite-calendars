@@ -65,7 +65,7 @@ class SetupView(APIView):
             name = mailbox_email
         if not name:
             return Response(
-                {"error": "name is required"},
+                {"code": "name_required", "error": "name is required"},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -76,15 +76,17 @@ class SetupView(APIView):
             return Response(result, status=status.HTTP_201_CREATED)
         except SetupServiceError as exc:
             logger.warning(
-                "Setup rejected for user %s (mailbox=%s): %s",
+                "Setup rejected for user %s (mailbox=%s, code=%s): %s",
                 request.user.pk,
                 mailbox_email,
+                exc.code,
                 exc,
             )
-            data = {"error": str(exc)}
-            if exc.code:
-                data["code"] = exc.code
-            return Response(data, status=status.HTTP_400_BAD_REQUEST)
+            # The message can hold internal details, so return only the code.
+            return Response(
+                {"code": exc.code, "error": "Calendar setup failed."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
         except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to setup calendar for %s", request.user.pk)
             return Response(
