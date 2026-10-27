@@ -1021,18 +1021,3 @@ END:VTIMEZONE`;
     return [];
   }
 }
-
-/**
- * Check if a timezone is supported
- */
-export function isTimezoneSupported(tzid: string): boolean {
-  const canonicalTzid = TIMEZONE_ALIASES[tzid] ?? tzid;
-  return canonicalTzid in TIMEZONE_DATA;
-}
-
-/**
- * Get list of all supported timezone IDs
- */
-export function getSupportedTimezones(): string[] {
-  return Object.keys(TIMEZONE_DATA);
-}

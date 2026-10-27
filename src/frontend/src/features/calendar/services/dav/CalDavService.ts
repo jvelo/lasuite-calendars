@@ -1538,10 +1538,6 @@ export class CalDavService {
   }
 }
 
-export function createCalDavService(): CalDavService {
-  return new CalDavService();
-}
-
 // ============================================================================
 // FreeBusy Response Parsing
 // ============================================================================

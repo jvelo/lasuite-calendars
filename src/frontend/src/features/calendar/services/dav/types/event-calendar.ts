@@ -369,40 +369,6 @@ export type EventCalendarResourceFetcher = (
 ) => void | Promise<EventCalendarResource[]>;
 
 // ============================================================================
-// Calendar Instance Types
-// ============================================================================
-
-export type EventCalendarInstance = {
-  // Navigation
-  getDate(): Date;
-  setOption(name: string, value: unknown): void;
-  getOption(name: string): unknown;
-  getView(): EventCalendarViewInfo;
-  prev(): void;
-  next(): void;
-  today(): void;
-  gotoDate(date: Date | string): void;
-
-  // Events
-  getEvents(): EventCalendarEvent[];
-  getEventById(id: string | number): EventCalendarEvent | null;
-  addEvent(event: EventCalendarEventInput): EventCalendarEvent;
-  updateEvent(event: EventCalendarEvent): void;
-  removeEventById(id: string | number): void;
-  refetchEvents(): void;
-
-  // Resources
-  getResources(): EventCalendarResource[];
-  getResourceById(id: string | number): EventCalendarResource | null;
-  addResource(resource: EventCalendarResource): void;
-  refetchResources(): void;
-
-  // Rendering
-  unselect(): void;
-  destroy(): void;
-};
-
-// ============================================================================
 // Conversion Options
 // ============================================================================
 
