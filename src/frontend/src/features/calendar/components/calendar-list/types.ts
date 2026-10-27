@@ -28,7 +28,10 @@ export interface CalendarItemMenuProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onEdit: () => void;
-  onDelete: () => void;
+  /** Deletes the calendar for every user. Set it for the owner only. */
+  onDelete?: () => void;
+  /** Removes only the current user's access. Set it for a sharee only. */
+  onRemove?: () => void;
   onShare?: () => void;
   onImport?: () => void;
   onSubscription?: () => void;
@@ -42,7 +45,7 @@ export interface CalendarItemMenuProps {
  */
 export interface DeleteConfirmModalProps {
   isOpen: boolean;
-  calendarName: string;
+  calendar: CalDavCalendar | null;
   onConfirm: () => void;
   onCancel: () => void;
   isLoading: boolean;
@@ -60,6 +63,7 @@ export interface CalendarListItemProps {
   onToggleVisibility: (url: string) => void;
   onMenuToggle: (url: string) => void;
   onEdit: (calendar: CalDavCalendar) => void;
+  /** Asks to delete the calendar, or to remove it for a sharee. */
   onDelete: (calendar: CalDavCalendar) => void;
   onShare?: (calendar: CalDavCalendar) => void;
   onImport?: (calendar: CalDavCalendar) => void;

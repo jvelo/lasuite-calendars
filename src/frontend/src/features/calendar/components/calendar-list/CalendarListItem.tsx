@@ -9,6 +9,7 @@ import { Mail } from "@gouvfr-lasuite/ui-components/icons";
 import { CalendarItemMenu } from "./CalendarItemMenu";
 
 import { DEFAULT_EVENT_COLOR } from "@/features/calendar/constants";
+import { isCalendarOwner } from "@/features/calendar/utils/calendar-ownership";
 import type { CalendarListItemProps } from "./types";
 
 /**
@@ -33,6 +34,7 @@ export const CalendarListItem = ({
   const { t } = useTranslation();
 
   const calendarColor = typeof calendar.color === "string" ? calendar.color : DEFAULT_EVENT_COLOR;
+  const isOwner = isCalendarOwner(calendar);
 
   return (
     <div className={`calendar-list__item ${isMenuOpen ? "calendar-list__item--menu-open" : ""}`}>
@@ -67,7 +69,8 @@ export const CalendarListItem = ({
           isOpen={isMenuOpen}
           onOpenChange={(open) => (open ? onMenuToggle(calendar.url) : onCloseMenu())}
           onEdit={() => onEdit(calendar)}
-          onDelete={() => onDelete(calendar)}
+          onDelete={isOwner ? () => onDelete(calendar) : undefined}
+          onRemove={isOwner ? undefined : () => onDelete(calendar)}
           onShare={onShare ? () => onShare(calendar) : undefined}
           onImport={onImport ? () => onImport(calendar) : undefined}
           onSubscription={onSubscription ? () => onSubscription(calendar) : undefined}
