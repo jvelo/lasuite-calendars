@@ -3859,6 +3859,28 @@ class TestCalendarDeletion:
         _assert_share_level(owner_client, owner.email, cal_id, stayer.email, "read")
 
 
+def _read_sync_managed(client, user_email, cal_uri):
+    """Return the LS:calendar-sync-managed value of a calendar, or None."""
+    body = (
+        '<?xml version="1.0"?>'
+        '<D:propfind xmlns:D="DAV:" '
+        'xmlns:LS="http://lasuite.numerique.gouv.fr/ns/">'
+        "<D:prop><LS:calendar-sync-managed/></D:prop>"
+        "</D:propfind>"
+    )
+    resp = client.generic(
+        "PROPFIND",
+        f"/caldav/calendars/users/{user_email}/{cal_uri}/",
+        data=body,
+        content_type="application/xml",
+        HTTP_DEPTH="0",
+    )
+    assert resp.status_code == 207
+    root = ET.fromstring(resp.content)
+    prop = root.find(".//{http://lasuite.numerique.gouv.fr/ns/}calendar-sync-managed")
+    return prop.text if prop is not None and prop.text else None
+
+
 class TestSyncManagedCalendarDeletion:
     """DELETE on a mailbox calendar instance.
 
@@ -3890,6 +3912,7 @@ class TestSyncManagedCalendarDeletion:
             ],
         )
         cal_uri = _find_shared_cal_uri(member, before_urls=before_urls)
+        assert _read_sync_managed(member_client, member.email, cal_uri) == "true"
 
         resp = _delete_calendar(member_client, member.email, cal_uri)
 
@@ -3922,8 +3945,11 @@ class TestSyncManagedCalendarDeletion:
         )
         member_uri = _find_shared_cal_uri(member, before_urls=before_member)
         before_sharee = _list_calendar_urls(sharee)
-        _share_calendar_via_caldav(member_client, member, member_uri, sharee.email, "read")
+        _share_calendar_via_caldav(
+            member_client, member, member_uri, sharee.email, "read"
+        )
         sharee_uri = _find_shared_cal_uri(sharee, before_urls=before_sharee)
+        assert _read_sync_managed(sharee_client, sharee.email, sharee_uri) is None
 
         resp = _delete_calendar(sharee_client, sharee.email, sharee_uri)
 
