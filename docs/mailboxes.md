@@ -239,6 +239,12 @@ refuses the `DELETE` with a 403, because the next sync would create the
 instance again. To remove the calendar from a user's list, remove their
 access to the mailbox in Messages.
 
+SabreDAV exposes `LS:calendar-sync-managed` with the value `true` on
+these instances. The frontend uses it to show the delete action as
+disabled, with a note that Messages manages the access. A manual share
+of a mailbox calendar does not have this property, so its sharee can
+delete it.
+
 ### Restriction on MAILBOX calendar sharing
 
 `MailboxPlugin` enforces that native `CS:share` POST
