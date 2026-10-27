@@ -402,10 +402,6 @@ class Channel(BaseModel):
                 raise ValidationError(
                     "caldav_path is required for scope_level='calendar'."
                 )
-        if sl == ChannelScopeLevel.GLOBAL and not self.user_id:
-            if not self.organization_id:
-                pass  # global channels don't require any FK
-
         valid = {s.value for s in ChannelScope}
         for scope in self.scopes:
             if scope not in valid:

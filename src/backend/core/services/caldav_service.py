@@ -266,41 +266,6 @@ class CalDAVHTTPClient:
             logger.exception("CalDAV error looking up event %s", uid)
             return None, None, None
 
-    def put_event(
-        self, user, href: str, ical_data: str, etag: str | None = None
-    ) -> bool:
-        """PUT updated iCalendar data back to CalDAV. Returns True on success.
-
-        If *etag* is provided, the request includes an If-Match header to
-        prevent lost updates from concurrent modifications.
-        """
-        try:
-            extra_headers = {}
-            if etag:
-                extra_headers["If-Match"] = etag
-            response = self.request(
-                "PUT",
-                user,
-                href,
-                data=ical_data.encode("utf-8"),
-                content_type="text/calendar; charset=utf-8",
-                extra_headers=extra_headers or None,
-            )
-            if response.status_code in (200, 201, 204):
-                return True
-            if response.status_code == 412:
-                logger.warning("CalDAV PUT conflict (ETag mismatch) for %s", href)
-                return False
-            logger.error(
-                "CalDAV PUT failed: %s %s",
-                response.status_code,
-                response.text[:500],
-            )
-            return False
-        except requests.exceptions.RequestException:
-            logger.exception("CalDAV PUT error for %s", href)
-            return False
-
     @staticmethod
     def update_attendee_partstat(
         ical_data: str, email: str, new_partstat: str
