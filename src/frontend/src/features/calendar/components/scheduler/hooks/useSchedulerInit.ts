@@ -189,6 +189,9 @@ export const useSchedulerInit = ({
 
       // Event display
       dayMaxEvents: true,
+      // The library writes "+N more" and "Close" in English by default.
+      moreLinkContent: ({ num }: { num: number }) => t("calendar.views.moreEvents", { count: num }),
+      buttonText: (texts: Record<string, string>) => ({ ...texts, close: t("common.close") }),
       nowIndicator: true,
 
       // Date formatting (locale-aware)

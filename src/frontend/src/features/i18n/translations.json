@@ -143,6 +143,8 @@
           "listMonth": "Month list",
           "listYear": "Year list",
           "today": "Today",
+          "moreEvents_one": "+{{count}} more",
+          "moreEvents_other": "+{{count}} more",
           "mobile": {
             "oneDay": "One day",
             "workWeek": "Work week",
@@ -1110,6 +1112,8 @@
           "listMonth": "Liste mois",
           "listYear": "Liste année",
           "today": "Aujourd'hui",
+          "moreEvents_one": "+{{count}} autre",
+          "moreEvents_other": "+{{count}} autres",
           "mobile": {
             "oneDay": "Un jour",
             "workWeek": "Semaine ouvrée",
@@ -1824,6 +1828,8 @@
           "listMonth": "Maand lijst",
           "listYear": "Jaar lijst",
           "today": "Vandaag",
+          "moreEvents_one": "+{{count}} meer",
+          "moreEvents_other": "+{{count}} meer",
           "mobile": {
             "oneDay": "Een dag",
             "workWeek": "Werkweek",
