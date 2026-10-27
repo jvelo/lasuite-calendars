@@ -31,9 +31,12 @@ const esc = (s: string): string =>
 const fmtTime = (d: Date): string =>
   `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
 
-export const createEventContent = (info: EventContentInfo): EventCalendarContent => {
+export const createEventContent = (
+  info: EventContentInfo,
+  noTitle: string,
+): EventCalendarContent => {
   const { event } = info;
-  const title = typeof event.title === "string" ? event.title : "";
+  const title = (typeof event.title === "string" && event.title) || noTitle;
 
   // All-day events: just show the title
   if (event.allDay) {

@@ -1,6 +1,8 @@
 import { Alert, Input, Select, VariantType } from "@gouvfr-lasuite/ui-components";
 import { useState, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import type { TFunction } from "i18next";
+import { useCalendarLocale } from "../../hooks/useCalendarLocale";
 import { FOREVER_YEARS_THRESHOLD } from "../../services/dav/constants";
 import { Warning } from "@gouvfr-lasuite/ui-components/icons";
 
@@ -131,8 +133,62 @@ export function getEndType(value?: IcsRecurrenceRule): EndType {
   return "never";
 }
 
+// 2024-01-01 is a Monday. Each index gives a date on that weekday.
+const WEEKDAY_INDEX: Record<string, number> = { MO: 0, TU: 1, WE: 2, TH: 3, FR: 4, SA: 5, SU: 6 };
+
+const formatWeekday = (day: string, intlLocale: string): string =>
+  new Intl.DateTimeFormat(intlLocale, { weekday: "short", timeZone: "UTC" }).format(
+    new Date(Date.UTC(2024, 0, 1 + WEEKDAY_INDEX[day])),
+  );
+
+const SUMMARY_FREQUENCY_KEYS: Partial<Record<RecurrenceFrequency, string>> = {
+  DAILY: "daily",
+  WEEKLY: "weekly",
+  MONTHLY: "monthly",
+  YEARLY: "yearly",
+};
+
+export function buildRecurrenceSummary(
+  rule: IcsRecurrenceRule,
+  t: TFunction,
+  intlLocale: string,
+): string {
+  const frequencyKey = SUMMARY_FREQUENCY_KEYS[rule.frequency];
+  if (!frequencyKey) return "";
+
+  const parts = [t(`calendar.recurrence.summary.${frequencyKey}`, { count: rule.interval || 1 })];
+
+  if (rule.frequency === "WEEKLY" && rule.byDay?.length) {
+    // Not the one-letter button labels: "T" is both Tuesday and Thursday.
+    const dayLabels = rule.byDay.map((d) =>
+      formatWeekday(typeof d === "string" ? d : d.day, intlLocale),
+    );
+    parts.push(dayLabels.join(", "));
+  }
+
+  // Defer to ``getEndType``: a ``count`` / ``until`` past the
+  // forever threshold classifies as ``never`` and must not show
+  // a date / count fragment, otherwise the summary contradicts
+  // the active end-of-recurrence button.
+  const endType = getEndType(rule);
+  const untilDate = getResolvedUntilDate(rule);
+  if (endType === "date" && untilDate) {
+    // The UTC fields of UNTIL hold the end day.
+    const date = new Intl.DateTimeFormat(intlLocale, {
+      dateStyle: "medium",
+      timeZone: "UTC",
+    }).format(untilDate);
+    parts.push(t("calendar.recurrence.summary.until", { date }));
+  } else if (endType === "count" && rule.count) {
+    parts.push(t("calendar.recurrence.summary.count", { count: rule.count }));
+  }
+
+  return parts.join(" · ");
+}
+
 export function RecurrenceEditor({ value, onChange }: RecurrenceEditorProps) {
   const { t } = useTranslation();
+  const { intlLocale } = useCalendarLocale();
 
   const [isCustom, setIsCustom] = useState(() => {
     if (!value) return false;
@@ -188,40 +244,10 @@ export function RecurrenceEditor({ value, onChange }: RecurrenceEditorProps) {
     [t],
   );
 
-  const summary = useMemo((): string => {
-    if (!isCustom || !value) return "";
-
-    const interval = value.interval || 1;
-    const freq = value.frequency;
-    const freqLabel = t(
-      `calendar.recurrence.${freq === "DAILY" ? "days" : freq === "WEEKLY" ? "weeks" : freq === "MONTHLY" ? "months" : "years"}`,
-    );
-
-    let result = `${t("calendar.recurrence.everyLabel")} ${interval > 1 ? `${interval} ` : ""}${freqLabel}`;
-
-    if (freq === "WEEKLY" && value.byDay?.length) {
-      const dayLabels = value.byDay.map((d) => {
-        const dayKey = typeof d === "string" ? d : d.day;
-        return t(`calendar.recurrence.weekdays.${dayKey.toLowerCase()}`);
-      });
-      result += ` · ${dayLabels.join(", ")}`;
-    }
-
-    // Defer to ``getEndType``: a ``count`` / ``until`` past the
-    // forever threshold classifies as ``never`` and must not show
-    // a date / count fragment, otherwise the summary contradicts
-    // the active end-of-recurrence button.
-    const summaryEndType = getEndType(value);
-    if (summaryEndType === "date" && value.until) {
-      const untilDate = getResolvedUntilDate(value);
-      const dateStr = untilDate ? untilDate.toISOString().split("T")[0] : "";
-      result += ` · ${t("calendar.recurrence.on")} ${dateStr}`;
-    } else if (summaryEndType === "count" && value.count) {
-      result += ` · ${value.count} ${t("calendar.recurrence.occurrences")}`;
-    }
-
-    return result;
-  }, [isCustom, value, t]);
+  const summary = useMemo(
+    () => (isCustom && value ? buildRecurrenceSummary(value, t, intlLocale) : ""),
+    [isCustom, value, t, intlLocale],
+  );
 
   const getSimpleValue = (): string => {
     if (!value) return "NONE";

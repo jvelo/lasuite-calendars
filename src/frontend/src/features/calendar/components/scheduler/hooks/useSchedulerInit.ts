@@ -185,10 +185,15 @@ export const useSchedulerInit = ({
       },
 
       // Custom event content — adapts layout to event duration
-      eventContent: (info: EventContentInfo) => createEventContent(info),
+      eventContent: (info: EventContentInfo) =>
+        createEventContent(info, t("calendar.event.noTitle")),
 
       // Event display
       dayMaxEvents: true,
+      // The library writes "+N more" and "Close" in English by default.
+      moreLinkContent: ({ num }: { num: number }) => t("calendar.views.moreEvents", { count: num }),
+      buttonText: (texts: Record<string, string>) => ({ ...texts, close: t("common.close") }),
+      noEventsContent: t("calendar.views.mobile.noEvents"),
       nowIndicator: true,
 
       // Date formatting (locale-aware)

@@ -36,6 +36,24 @@ describe("translations", () => {
     });
   });
 
+  describe("scheduling.conflicts", () => {
+    it.each([
+      ["en", 1, "1 conflict"],
+      ["en", 3, "3 conflicts"],
+      ["fr", 1, "1 conflit"],
+      ["fr", 2, "2 conflits"],
+      ["nl", 2, "2 conflicten"],
+    ])("translates %s with count %i", async (language, count, expected) => {
+      expect(await translate(language, "scheduling.conflicts", { count })).toBe(expected);
+    });
+  });
+
+  it("puts the calendar name in the show calendar label", async () => {
+    expect(await translate("nl", "calendar.list.showCalendar", { name: "Werk" })).toBe(
+      "Kalender Werk tonen",
+    );
+  });
+
   it("translates the share errors in French", async () => {
     expect(await translate("fr-fr", "calendar.shareCalendar.errorOwner")).toBe(
       "Vous ne pouvez pas partager un calendrier avec son propriétaire.",

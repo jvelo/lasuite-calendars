@@ -9,6 +9,10 @@
         "title": "You don't have the necessary permissions to access this page.",
         "button": "Home"
       },
+      "404": {
+        "title": "This page does not exist.",
+        "button": "Home"
+      },
       "no_access": {
         "title": "Your login was successful, but this application is not available for your account.",
         "description": "If you think this is a mistake, please contact support.",
@@ -148,6 +152,8 @@
           "listMonth": "Month list",
           "listYear": "Year list",
           "today": "Today",
+          "moreEvents_one": "+{{count}} more",
+          "moreEvents_other": "+{{count}} more",
           "mobile": {
             "oneDay": "One day",
             "workWeek": "Work week",
@@ -166,6 +172,7 @@
           "calendar": "Calendar",
           "title": "Title",
           "titlePlaceholder": "Event title",
+          "noTitle": "(No title)",
           "location": "Location",
           "locationPlaceholder": "Location",
           "openLocation": "Open",
@@ -250,7 +257,7 @@
           "tentative": "Tentative",
           "declined": "Declined",
           "needsAction": "No response",
-          "yourResponse": "Your response",
+          "yourResponse": "Your response:",
           "cancelledNotice": "This event has been cancelled.",
           "rsvpRecurringTitle": "Respond to recurring event",
           "rsvpRecurringPrompt": "This is a recurring event. Apply your response to:"
@@ -262,7 +269,7 @@
           "shared": "(shared)",
           "mailboxCalendar": "Linked to mailbox: {{email}}",
           "unnamed": "Unnamed calendar",
-          "showCalendar": "Show calendar",
+          "showCalendar": "Show calendar {{name}}",
           "edit": "Edit",
           "delete": "Delete",
           "share": "Share",
@@ -338,6 +345,19 @@
           "on": "On",
           "after": "After",
           "occurrences": "occurrences",
+          "summary": {
+            "daily_one": "Every day",
+            "daily_other": "Every {{count}} days",
+            "weekly_one": "Every week",
+            "weekly_other": "Every {{count}} weeks",
+            "monthly_one": "Every month",
+            "monthly_other": "Every {{count}} months",
+            "yearly_one": "Every year",
+            "yearly_other": "Every {{count}} years",
+            "until": "until {{date}}",
+            "count_one": "{{count}} occurrence",
+            "count_other": "{{count}} occurrences"
+          },
           "weekdays": {
             "mo": "M",
             "tu": "T",
@@ -666,7 +686,8 @@
         "previousDay": "Previous day",
         "nextDay": "Next day",
         "noConflicts": "No conflicts",
-        "conflicts": "{{count}} conflict(s)",
+        "conflicts_one": "{{count}} conflict",
+        "conflicts_other": "{{count}} conflicts",
         "addAttendeesToSeeAvailability": "Add attendees to see availability"
       }
     }
@@ -679,11 +700,15 @@
         }
       },
       "401": {
-        "title": "Connectez-vous pour accéder aux documents.",
+        "title": "Connectez-vous pour accéder à cette application.",
         "button": "Se connecter"
       },
       "403": {
         "title": "Vous n'avez pas les permissions nécessaires pour accéder à cette page.",
+        "button": "Accueil"
+      },
+      "404": {
+        "title": "Cette page n'existe pas.",
         "button": "Accueil"
       },
       "no_access": {
@@ -1123,6 +1148,8 @@
           "listMonth": "Liste mois",
           "listYear": "Liste année",
           "today": "Aujourd'hui",
+          "moreEvents_one": "+{{count}} autre",
+          "moreEvents_other": "+{{count}} autres",
           "mobile": {
             "oneDay": "Un jour",
             "workWeek": "Semaine ouvrée",
@@ -1141,6 +1168,7 @@
           "calendar": "Calendrier",
           "title": "Titre",
           "titlePlaceholder": "Titre de l'événement",
+          "noTitle": "(Sans titre)",
           "location": "Lieu",
           "locationPlaceholder": "Lieu",
           "openLocation": "Ouvrir",
@@ -1225,7 +1253,7 @@
           "tentative": "Peut-être",
           "declined": "Refusé",
           "needsAction": "En attente",
-          "yourResponse": "Votre réponse",
+          "yourResponse": "Votre réponse :",
           "cancelledNotice": "Cet événement a été annulé.",
           "rsvpRecurringTitle": "Répondre à un événement récurrent",
           "rsvpRecurringPrompt": "Ceci est un événement récurrent. Appliquer votre réponse à :"
@@ -1237,7 +1265,7 @@
           "shared": "(partagé)",
           "unnamed": "Calendrier sans nom",
           "mailboxCalendar": "Lié à la boîte : {{email}}",
-          "showCalendar": "Afficher le calendrier",
+          "showCalendar": "Afficher le calendrier {{name}}",
           "edit": "Modifier",
           "delete": "Supprimer",
           "share": "Partager",
@@ -1313,6 +1341,19 @@
           "on": "Le",
           "after": "Après",
           "occurrences": "occurrences",
+          "summary": {
+            "daily_one": "Tous les jours",
+            "daily_other": "Tous les {{count}} jours",
+            "weekly_one": "Chaque semaine",
+            "weekly_other": "Toutes les {{count}} semaines",
+            "monthly_one": "Tous les mois",
+            "monthly_other": "Tous les {{count}} mois",
+            "yearly_one": "Tous les ans",
+            "yearly_other": "Tous les {{count}} ans",
+            "until": "jusqu'au {{date}}",
+            "count_one": "{{count}} occurrence",
+            "count_other": "{{count}} occurrences"
+          },
           "weekdays": {
             "mo": "L",
             "tu": "M",
@@ -1641,7 +1682,8 @@
         "previousDay": "Jour précédent",
         "nextDay": "Jour suivant",
         "noConflicts": "Aucun conflit",
-        "conflicts": "{{count}} conflit(s)",
+        "conflicts_one": "{{count}} conflit",
+        "conflicts_other": "{{count}} conflits",
         "addAttendeesToSeeAvailability": "Ajoutez des participants pour voir les disponibilités"
       }
     }
@@ -1664,12 +1706,16 @@
         }
       },
       "401": {
-        "title": "U moet ingelogd zijn om toegang te krijgen tot de bestanden.",
-        "button": "Login"
+        "title": "U moet ingelogd zijn om toegang te krijgen tot deze applicatie.",
+        "button": "Inloggen"
       },
       "403": {
-        "title": "U beschikt niet over de benodigde rechten om dit bestand te openen.",
-        "button": "Home"
+        "title": "U beschikt niet over de benodigde rechten om deze pagina te openen.",
+        "button": "Startpagina"
+      },
+      "404": {
+        "title": "Deze pagina bestaat niet.",
+        "button": "Startpagina"
       },
       "file_download_modal": {
         "error": {
@@ -1845,6 +1891,8 @@
           "listMonth": "Maand lijst",
           "listYear": "Jaar lijst",
           "today": "Vandaag",
+          "moreEvents_one": "+{{count}} meer",
+          "moreEvents_other": "+{{count}} meer",
           "mobile": {
             "oneDay": "Een dag",
             "workWeek": "Werkweek",
@@ -1863,6 +1911,7 @@
           "calendar": "Kalender",
           "title": "Titel",
           "titlePlaceholder": "Evenement titel",
+          "noTitle": "(Geen titel)",
           "location": "Locatie",
           "locationPlaceholder": "Locatie",
           "openLocation": "Openen",
@@ -1895,7 +1944,7 @@
             "addRecurrence": "Herhaling toevoegen",
             "addLocation": "Locatie toevoegen",
             "addVideoConference": "Visio",
-            "createVisio": "Add video conference",
+            "createVisio": "Videoconferentie toevoegen",
             "removeVisio": "Videoconferentie verwijderen",
             "videoLink": "Videoconferentie link",
             "addAttendees": "Deelnemers toevoegen",
@@ -1947,7 +1996,7 @@
           "tentative": "Misschien",
           "declined": "Geweigerd",
           "needsAction": "Geen antwoord",
-          "yourResponse": "Uw antwoord",
+          "yourResponse": "Uw antwoord:",
           "cancelledNotice": "Dit evenement is geannuleerd.",
           "rsvpRecurringTitle": "Antwoorden op terugkerend evenement",
           "rsvpRecurringPrompt": "Dit is een terugkerend evenement. Pas uw antwoord toe op:"
@@ -1959,7 +2008,7 @@
           "shared": "(gedeeld)",
           "unnamed": "Naamloze kalender",
           "mailboxCalendar": "Gekoppeld aan mailbox: {{email}}",
-          "showCalendar": "Kalender tonen",
+          "showCalendar": "Kalender {{name}} tonen",
           "edit": "Bewerken",
           "delete": "Verwijderen",
           "share": "Delen",
@@ -2035,6 +2084,19 @@
           "on": "Op",
           "after": "Na",
           "occurrences": "keer",
+          "summary": {
+            "daily_one": "Elke dag",
+            "daily_other": "Elke {{count}} dagen",
+            "weekly_one": "Elke week",
+            "weekly_other": "Elke {{count}} weken",
+            "monthly_one": "Elke maand",
+            "monthly_other": "Elke {{count}} maanden",
+            "yearly_one": "Elk jaar",
+            "yearly_other": "Elke {{count}} jaar",
+            "until": "tot {{date}}",
+            "count_one": "{{count}} keer",
+            "count_other": "{{count}} keer"
+          },
           "weekdays": {
             "mo": "M",
             "tu": "D",
@@ -2363,7 +2425,8 @@
         "previousDay": "Vorige dag",
         "nextDay": "Volgende dag",
         "noConflicts": "Geen conflicten",
-        "conflicts": "{{count}} conflict(en)",
+        "conflicts_one": "{{count}} conflict",
+        "conflicts_other": "{{count}} conflicten",
         "addAttendeesToSeeAvailability": "Voeg deelnemers toe om beschikbaarheid te zien"
       }
     }
