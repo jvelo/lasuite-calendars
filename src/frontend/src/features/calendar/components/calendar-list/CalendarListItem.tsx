@@ -12,7 +12,7 @@ import { DEFAULT_EVENT_COLOR } from "@/features/calendar/constants";
 import type { CalendarListItemProps } from "./types";
 
 /**
- * CalendarListItem - Displays a user-owned calendar.
+ * CalendarListItem - Displays an owned or shared calendar.
  */
 export const CalendarListItem = ({
   calendar,
