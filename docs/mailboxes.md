@@ -236,6 +236,11 @@ in `calendarinstances`. This distinguishes them from manual shares and
 allows the sync to cleanly add/update/remove its own shares without
 touching user-created ones.
 
+A user cannot delete their own sync-managed instance. `MailboxPlugin`
+refuses the `DELETE` with a 403, because the next sync would create the
+instance again. To remove the calendar from a user's list, remove their
+access to the mailbox in Messages.
+
 ### Restriction on MAILBOX calendar sharing
 
 `MailboxPlugin` enforces that native `CS:share` POST
