@@ -3803,3 +3803,80 @@ class TestNonOwnerCannotReshare:
         # Alice's level must be unchanged — the afterPost guard refuses the
         # share_access_level write for a non-owner principal.
         _assert_share_level(owner_client, owner.email, cal_id, alice.email, "freebusy")
+
+
+def _delete_calendar(client, user_email, cal_uri):
+    """DELETE a calendar collection via the CalDAV proxy."""
+    return client.generic("DELETE", f"/caldav/calendars/users/{user_email}/{cal_uri}/")
+
+
+class TestSyncManagedCalendarDeletion:
+    """DELETE on a mailbox calendar instance.
+
+    Messages manages sync-managed instances. A manual share on a
+    mailbox calendar is an ordinary share.
+    """
+
+    def test_sync_managed_instance_delete_is_refused(self):
+        """DELETE of a sync-managed mailbox instance returns 403.
+
+        Regression: SabreDAV deleted the sharee row, and the next
+        mailbox ACL sync created it again. The calendar came back
+        after a page refresh.
+        """
+        org = factories.OrganizationFactory(external_id="del-sync")
+        owner, _, _ = _create_user_with_calendar(org, "owner-dsync")
+        member, member_client, _ = _create_user_with_calendar(org, "member-dsync")
+        mailbox_email = "team@del-sync.com"
+        _create_mailbox_calendar(owner, mailbox_email, org)
+        before_urls = _list_calendar_urls(member)
+        _sync_mailbox_acls(
+            owner,
+            [
+                {
+                    "user_email": member.email,
+                    "mailbox_email": mailbox_email,
+                    "privilege": "read-write",
+                }
+            ],
+        )
+        cal_uri = _find_shared_cal_uri(member, before_urls=before_urls)
+
+        resp = _delete_calendar(member_client, member.email, cal_uri)
+
+        assert resp.status_code == 403
+        assert any(
+            url.rstrip("/").endswith(cal_uri) for url in _list_calendar_urls(member)
+        )
+
+    def test_manual_share_on_mailbox_calendar_can_be_deleted(self):
+        """A sharee can delete a manual share of a mailbox calendar.
+
+        Only sync-managed instances are protected. A read share that a
+        mailbox member adds by hand is an ordinary share.
+        """
+        org = factories.OrganizationFactory(external_id="del-mbx-manual")
+        member, member_client, _ = _create_user_with_calendar(org, "member-dmm")
+        sharee, sharee_client, _ = _create_user_with_calendar(org, "sharee-dmm")
+        mailbox_email = "team@del-mbx-manual.com"
+        _create_mailbox_calendar(member, mailbox_email, org)
+        before_member = _list_calendar_urls(member)
+        _sync_mailbox_acls(
+            member,
+            [
+                {
+                    "user_email": member.email,
+                    "mailbox_email": mailbox_email,
+                    "privilege": "read-write",
+                }
+            ],
+        )
+        member_uri = _find_shared_cal_uri(member, before_urls=before_member)
+        before_sharee = _list_calendar_urls(sharee)
+        _share_calendar_via_caldav(member_client, member, member_uri, sharee.email, "read")
+        sharee_uri = _find_shared_cal_uri(sharee, before_urls=before_sharee)
+
+        resp = _delete_calendar(sharee_client, sharee.email, sharee_uri)
+
+        assert resp.status_code == 204
+        assert _list_calendar_urls(sharee) == before_sharee
