@@ -14,6 +14,7 @@ import { EventCalendarAdapter } from "../services/dav/EventCalendarAdapter";
 import { caldavServerUrl } from "../utils/DavClient";
 import { addToast, ToasterItem } from "@/features/ui/components/toaster/Toaster";
 import { useAuth } from "@/features/auth/Auth";
+import { isOwnedCalendar } from "../utils/calendar-ownership";
 
 import type {
   CalDavCalendar,
@@ -113,7 +114,6 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const { ownedCalendars, sharedCalendars } = useMemo(() => {
-    const homeUrl = caldavService.getAccount()?.homeUrl;
     // Sort by `calendar-order` ascending (missing = end), tie-broken by
     // displayName so the order is stable for never-reordered calendars.
     const byOrder = (a: CalDavCalendar, b: CalDavCalendar) => {
@@ -122,16 +122,10 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
       if (ao !== bo) return ao - bo;
       return a.displayName.localeCompare(b.displayName);
     };
-    if (!homeUrl) {
-      return {
-        ownedCalendars: [...davCalendars].sort(byOrder),
-        sharedCalendars: [],
-      };
-    }
     const owned: CalDavCalendar[] = [];
     const shared: CalDavCalendar[] = [];
     for (const cal of davCalendars) {
-      if (cal.url.startsWith(homeUrl)) {
+      if (isOwnedCalendar(cal)) {
         owned.push(cal);
       } else {
         shared.push(cal);
@@ -140,7 +134,7 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     owned.sort(byOrder);
     shared.sort(byOrder);
     return { ownedCalendars: owned, sharedCalendars: shared };
-  }, [davCalendars, caldavService]);
+  }, [davCalendars]);
 
   // Flat, sidebar-consistent ordering (owned then shared).
   const orderedCalendars = useMemo(
