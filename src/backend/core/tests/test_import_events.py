@@ -356,7 +356,8 @@ class TestICSImportService:
         result = service.import_events(user, caldav_path, ICS_INVALID)
 
         assert result.imported_count == 0
-        assert len(result.errors) >= 1
+        assert result.error_code == "unavailable"
+        assert not result.errors
 
     @patch("core.services.caldav_service.requests.Session.request")
     def test_import_with_timezone(self, mock_post):
@@ -560,7 +561,18 @@ class TestICSImportService:
         result = service.import_events(user, caldav_path, ICS_SINGLE_EVENT)
 
         assert result.imported_count == 0
-        assert len(result.errors) >= 1
+        assert result.error_code == "unavailable"
+        assert not result.errors
+
+    def test_import_invalid_calendar_path(self):
+        """An invalid calendar path returns a code, not an English text."""
+        user = factories.UserFactory()
+
+        service = ICSImportService()
+        result = service.import_events(user, "/not/a/calendar/", ICS_SINGLE_EVENT)
+
+        assert result.error_code == "invalid_calendar"
+        assert not result.errors
 
 
 class TestImportEventsAPI:

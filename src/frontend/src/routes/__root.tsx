@@ -13,7 +13,9 @@ import { AppContextProvider, useAppContext } from "@/features/app/AppContext";
 import { AnalyticsProvider } from "@/features/analytics/AnalyticsProvider";
 import { ConfigProvider } from "@/features/config/ConfigProvider";
 import { LeftPanelProvider } from "@/features/layouts/contexts/LeftPanelContext";
-import { APIError, errorToString } from "@/features/api/APIError";
+import { APIError } from "@/features/api/APIError";
+import { getErrorMessageKey } from "@/features/api/errorMessageKey";
+import i18n from "@/features/i18n/initI18n";
 import { toCunninghamLocale } from "@/features/i18n/utils";
 import { removeQuotes, useCunninghamTheme } from "@/features/ui/cunningham/useCunninghamTheme";
 import { FeedbackFooterMobile } from "@/features/feedback/Feedback";
@@ -35,9 +37,10 @@ const onError = (error: Error, query: unknown) => {
       return;
     }
   }
+  console.error(error);
   addToast(
     <ToasterItem type="error">
-      <span>{errorToString(error)}</span>
+      <span>{i18n.t(getErrorMessageKey(error))}</span>
     </ToasterItem>,
   );
 };

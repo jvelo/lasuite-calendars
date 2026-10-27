@@ -56,6 +56,7 @@ export const useCreateChannel = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: createChannel,
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -69,6 +70,7 @@ export const useDeleteChannel = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: deleteChannel,
     onSuccess: () => {
       void queryClient.invalidateQueries({
@@ -80,6 +82,7 @@ export const useDeleteChannel = () => {
 
 export const useRegenerateToken = () => {
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: regenerateToken,
   });
 };
@@ -88,6 +91,7 @@ export const useUpdateChannel = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: ({ id, ...patch }: { id: string } & ChannelUpdate) => updateChannel(id, patch),
     onSuccess: () => {
       void queryClient.invalidateQueries({

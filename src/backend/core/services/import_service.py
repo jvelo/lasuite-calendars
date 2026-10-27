@@ -15,11 +15,16 @@ MAX_FILE_SIZE = 10 * 1024 * 1024  # 10 MB
 
 
 @dataclass
-class ImportResult:
+class ImportResult:  # pylint: disable=too-many-instance-attributes
     """Result of an ICS import operation.
 
     errors contains event names (summaries) of failed events,
-    at most 10 entries.
+    at most 10 entries. An entry is empty when the event has no name.
+
+    error_code is set when the whole import fails:
+
+    - ``unavailable``: the CalDAV server cannot do the import.
+    - ``invalid_calendar``: the calendar path is not valid.
 
     filtered contains titles (SUMMARY, falling back to UID) of events
     that were silently dropped because their component type is not in
@@ -36,6 +41,7 @@ class ImportResult:
     skipped_count: int = 0
     filtered_count: int = 0
     errors: list[str] = field(default_factory=list)
+    error_code: str | None = None
     filtered: list[str] = field(default_factory=list)
 
 
@@ -73,7 +79,8 @@ class ICSImportService:
         result = ImportResult()
 
         if not settings.CALDAV_INTERNAL_API_KEY:
-            result.errors.append("CALDAV_INTERNAL_API_KEY is not configured")
+            logger.error("ICS import failed: CALDAV_INTERNAL_API_KEY is not configured")
+            result.error_code = "unavailable"
             return result
 
         # Extract calendar URI from caldav_path
@@ -83,7 +90,7 @@ class ICSImportService:
             principal_user = parts[2]
             calendar_uri = parts[3]
         else:
-            result.errors.append("Invalid calendar path")
+            result.error_code = "invalid_calendar"
             return result
 
         # import runs in a background task so we can wait a decent amount of time
@@ -103,7 +110,7 @@ class ICSImportService:
             )
         except requests.RequestException as exc:
             logger.error("Failed to reach SabreDAV import endpoint: %s", exc)
-            result.errors.append("Failed to reach CalDAV server")
+            result.error_code = "unavailable"
             return result
 
         if response.status_code != 200:
@@ -112,14 +119,14 @@ class ICSImportService:
                 response.status_code,
                 response.text[:500],
             )
-            result.errors.append("CalDAV server error")
+            result.error_code = "unavailable"
             return result
 
         try:
             data = response.json()
         except ValueError:
             logger.error("Invalid JSON from SabreDAV import: %s", response.text[:500])
-            result.errors.append("Invalid response from CalDAV server")
+            result.error_code = "unavailable"
             return result
 
         result.total_events = data.get("total_events", 0)
@@ -146,10 +153,9 @@ class ICSImportService:
                     err.get("summary", "?"),
                     err.get("error", "?"),
                 )
-                result.errors.append(
-                    err.get("summary") or err.get("uid", "Unknown event")
-                )
+                result.errors.append(err.get("summary") or err.get("uid") or "")
             else:
-                result.errors.append(str(err))
+                logger.warning("Import failed with an unstructured error: %s", err)
+                result.errors.append("")
 
         return result
