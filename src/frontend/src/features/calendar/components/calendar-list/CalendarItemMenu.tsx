@@ -1,6 +1,6 @@
 /**
  * CalendarItemMenu component.
- * Context menu for calendar item actions (edit, delete, subscription).
+ * Context menu for calendar item actions (edit, delete or remove, subscription).
  */
 
 import { useMemo } from "react";
@@ -29,6 +29,7 @@ export const CalendarItemMenu = ({
   onOpenChange,
   onEdit,
   onDelete,
+  onRemove,
   onShare,
   onImport,
   onSubscription,
@@ -86,14 +87,14 @@ export const CalendarItemMenu = ({
       });
     }
 
-    items.push({
-      label: t("calendar.list.delete"),
-      icon: <Trash />,
-      callback: onDelete,
-    });
+    items.push(
+      onRemove
+        ? { label: t("calendar.list.removeFromList"), icon: <Trash />, callback: onRemove }
+        : { label: t("calendar.list.delete"), icon: <Trash />, callback: onDelete },
+    );
 
     return items;
-  }, [t, onEdit, onDelete, onShare, onImport, onSubscription, onMoveUp, onMoveDown]);
+  }, [t, onEdit, onDelete, onRemove, onShare, onImport, onSubscription, onMoveUp, onMoveDown]);
 
   return (
     <DropdownMenu options={options} isOpen={isOpen} onOpenChange={onOpenChange}>
