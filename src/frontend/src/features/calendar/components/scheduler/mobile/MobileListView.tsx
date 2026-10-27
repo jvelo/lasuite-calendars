@@ -102,7 +102,7 @@ export const MobileListView = ({
                     />
                     <div className="mobile-list__event-info">
                       <span className="mobile-list__event-title">
-                        {event.title || t("calendar.event.titlePlaceholder")}
+                        {event.title || t("calendar.event.noTitle")}
                       </span>
                       <span className="mobile-list__event-time">
                         {event.allDay
