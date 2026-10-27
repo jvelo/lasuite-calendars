@@ -30,18 +30,23 @@ ROLE_TO_PRIVILEGE = {
 SEND_ROLES = {"sender", "admin"}
 
 
-# Error code: the user has no role on the mailbox that lets them send.
+# Error codes of ``SetupServiceError``.
+MESSAGES_DISABLED = "messages_disabled"
+MAILBOX_ACCESS_DENIED = "mailbox_access_denied"
+# The user has no role on the mailbox that lets them send.
 MAILBOX_ROLE_REQUIRED = "mailbox_role_required"
+MAILBOX_ORG_UNRESOLVED = "mailbox_org_unresolved"
+CALENDAR_CREATION_FAILED = "calendar_creation_failed"
 
 
 class SetupServiceError(Exception):
     """Raised when a mailbox operation fails.
 
-    ``code`` is a stable identifier that clients can translate.
-    It is ``None`` when the error has no specific code.
+    ``code`` is a stable identifier. The message is for the logs only:
+    it can hold internal details.
     """
 
-    def __init__(self, message, code=None):
+    def __init__(self, message, code):
         super().__init__(message)
         self.code = code
 
@@ -76,7 +81,8 @@ def _resolve_mailbox_org_id(mailbox_data):
         if not external_id:
             raise SetupServiceError(
                 f"Mailbox {mailbox_email} has no "
-                f"'{org_claim}' attribute on its mail domain"
+                f"'{org_claim}' attribute on its mail domain",
+                code=MAILBOX_ORG_UNRESOLVED,
             )
     else:
         external_id = (
@@ -87,7 +93,8 @@ def _resolve_mailbox_org_id(mailbox_data):
         if not external_id:
             raise SetupServiceError(
                 f"Cannot resolve organization for mailbox {mailbox_email}: "
-                "no organization claim configured and no usable email domain"
+                "no organization claim configured and no usable email domain",
+                code=MAILBOX_ORG_UNRESOLVED,
             )
 
     org, created = Organization.objects.get_or_create(
@@ -171,7 +178,9 @@ class SetupService:
         propagated to other mailbox users via the share fan-out.
         """
         if not settings.FEATURE_MESSAGES_INTEGRATION:
-            raise SetupServiceError("Messages integration is not enabled")
+            raise SetupServiceError(
+                "Messages integration is not enabled", code=MESSAGES_DISABLED
+            )
 
         # Verify user has sender/admin access
         mailboxes = self.messages.get_user_mailboxes(user.email)
@@ -181,7 +190,8 @@ class SetupService:
         )
         if not user_mailbox:
             raise SetupServiceError(
-                f"User {user.email} does not have access to mailbox {mailbox_email}"
+                f"User {user.email} does not have access to mailbox {mailbox_email}",
+                code=MAILBOX_ACCESS_DENIED,
             )
 
         user_role = user_mailbox.get("role", "viewer")
@@ -369,13 +379,16 @@ class SetupService:
             )
             if resp.status_code not in (200, 201):
                 raise SetupServiceError(
-                    f"Failed to create calendar: {resp.status_code}"
+                    f"Failed to create calendar: {resp.status_code}",
+                    code=CALENDAR_CREATION_FAILED,
                 )
             return resp.json()
         except SetupServiceError:
             raise
         except Exception as exc:
-            raise SetupServiceError(f"Failed to create calendar: {exc}") from exc
+            raise SetupServiceError(
+                f"Failed to create calendar: {exc}", code=CALENDAR_CREATION_FAILED
+            ) from exc
 
     def _sync_acls(self, caller, shares, full_sync_users=None):
         """Batch sync mailbox shares via the internal API. One call.
