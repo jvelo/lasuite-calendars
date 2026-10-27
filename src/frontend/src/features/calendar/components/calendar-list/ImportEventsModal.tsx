@@ -24,6 +24,9 @@ import {
 
 import type { ImportEventsResult } from "../../api";
 
+// Same limit as the backend.
+const MAX_FILE_SIZE_MB = 10;
+
 interface ImportEventsModalProps {
   isOpen: boolean;
   caldavPath: string;
@@ -75,7 +78,9 @@ export const ImportEventsModal = ({
   };
 
   const hasResult = result !== null;
+  const isFileTooLarge = !!selectedFile && selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024;
   const hasErrors = result && result.errors && result.errors.length > 0;
+  const hasFailed = importMutation.isError || !!result?.error_code;
 
   return (
     <Modal
@@ -96,7 +101,7 @@ export const ImportEventsModal = ({
             <Button
               color="brand"
               onClick={handleImport}
-              disabled={!selectedFile || importMutation.isPending}
+              disabled={!selectedFile || isFileTooLarge || importMutation.isPending}
             >
               {importMutation.isPending ? <Spinner size="sm" /> : t("calendar.importEvents.import")}
             </Button>
@@ -127,13 +132,19 @@ export const ImportEventsModal = ({
           </div>
         )}
 
-        {importMutation.isError && !hasResult && (
+        {isFileTooLarge && !hasResult && (
+          <Alert className="app__alert--small" type={VariantType.ERROR} icon={<ErrorFilled />}>
+            {t("calendar.importEvents.fileTooLarge", { max: MAX_FILE_SIZE_MB })}
+          </Alert>
+        )}
+
+        {hasFailed && (
           <Alert className="app__alert--small" type={VariantType.ERROR} icon={<ErrorFilled />}>
             {t("calendar.importEvents.error")}
           </Alert>
         )}
 
-        {hasResult && (
+        {hasResult && !hasFailed && (
           <div className="import-events-modal__result">
             <p className="import-events-modal__result-header">
               {t("calendar.importEvents.resultHeader")}
@@ -143,7 +154,8 @@ export const ImportEventsModal = ({
                 <li className="import-events-modal__stat import-events-modal__stat--success">
                   <CircleCheck />
                   <span>
-                    <strong>{result.imported_count}</strong> {t("calendar.importEvents.imported")}
+                    <strong>{result.imported_count}</strong>{" "}
+                    {t("calendar.importEvents.imported", { count: result.imported_count })}
                   </span>
                 </li>
               )}
@@ -152,7 +164,7 @@ export const ImportEventsModal = ({
                   <Copy />
                   <span>
                     <strong>{result.duplicate_count}</strong>{" "}
-                    {t("calendar.importEvents.duplicates")}
+                    {t("calendar.importEvents.duplicates", { count: result.duplicate_count })}
                   </span>
                 </li>
               )}
@@ -160,7 +172,8 @@ export const ImportEventsModal = ({
                 <li className="import-events-modal__stat import-events-modal__stat--warning">
                   <Warning />
                   <span>
-                    <strong>{result.skipped_count}</strong> {t("calendar.importEvents.skipped")}
+                    <strong>{result.skipped_count}</strong>{" "}
+                    {t("calendar.importEvents.skipped", { count: result.skipped_count })}
                   </span>
                 </li>
               )}
@@ -170,7 +183,7 @@ export const ImportEventsModal = ({
                 <summary>{t("calendar.importEvents.errorDetails")}</summary>
                 <ul>
                   {result.errors!.map((error, index) => (
-                    <li key={index}>{error}</li>
+                    <li key={index}>{error || t("calendar.importEvents.unnamedEvent")}</li>
                   ))}
                 </ul>
               </details>

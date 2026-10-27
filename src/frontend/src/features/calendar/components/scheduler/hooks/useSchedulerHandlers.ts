@@ -928,7 +928,7 @@ export const useSchedulerHandlers = ({
           );
 
           if (!result.success) {
-            addErrorToast(result.error || "Failed to update event");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -943,7 +943,7 @@ export const useSchedulerHandlers = ({
           // Fetch source event from server
           const fetchResult = await caldavService.fetchEvent(eventUrl);
           if (!fetchResult.success || !fetchResult.data) {
-            addErrorToast("Failed to fetch event");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -954,7 +954,7 @@ export const useSchedulerHandlers = ({
           );
 
           if (!sourceEvent) {
-            addErrorToast("Source event not found");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -969,7 +969,7 @@ export const useSchedulerHandlers = ({
           );
 
           if (!truncateResult.success) {
-            addErrorToast(truncateResult.error || "Failed to truncate series");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -994,7 +994,7 @@ export const useSchedulerHandlers = ({
           });
 
           if (!createResult.success) {
-            addErrorToast(createResult.error || "Failed to create new series");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -1003,7 +1003,7 @@ export const useSchedulerHandlers = ({
           // This preserves RRULE, EXDATE, and all other ICS properties.
           const fetchResult = await caldavService.fetchEvent(eventUrl);
           if (!fetchResult.success || !fetchResult.data) {
-            addErrorToast("Failed to fetch event");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -1014,7 +1014,7 @@ export const useSchedulerHandlers = ({
           );
 
           if (!sourceEvent) {
-            addErrorToast("Source event not found");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -1091,7 +1091,7 @@ export const useSchedulerHandlers = ({
           });
 
           if (!result.success) {
-            addErrorToast(result.error || "Failed to update event");
+            addErrorToast(t("calendar.error.updateEvent"));
             info.revert();
             return;
           }
@@ -1101,8 +1101,8 @@ export const useSchedulerHandlers = ({
           calendarRef.current.refetchEvents();
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : "Failed to update event";
-        addErrorToast(message);
+        console.error("Error updating recurring event:", error);
+        addErrorToast(t("calendar.error.updateEvent"));
         info.revert();
       }
     },
@@ -1113,6 +1113,7 @@ export const useSchedulerHandlers = ({
       calendarRef,
       calendarUrl,
       getOccurrenceDateFromInfo,
+      t,
     ],
   );
 

@@ -81,10 +81,10 @@ class SetupView(APIView):
                 mailbox_email,
                 exc,
             )
-            return Response(
-                {"error": str(exc)},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
+            data = {"error": str(exc)}
+            if exc.code:
+                data["code"] = exc.code
+            return Response(data, status=status.HTTP_400_BAD_REQUEST)
         except Exception:  # pylint: disable=broad-exception-caught
             logger.exception("Failed to setup calendar for %s", request.user.pk)
             return Response(

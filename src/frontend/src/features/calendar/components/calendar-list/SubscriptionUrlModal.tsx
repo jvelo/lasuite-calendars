@@ -100,7 +100,9 @@ export const SubscriptionUrlModal = ({
     const channelId = displayChannel?.id;
     if (!channelId) return;
     await deleteChannelMutation.mutateAsync(channelId);
-    await createChannel.mutateAsync({ caldavPath, calendarName });
+    // The modal shows a failed create only after a create attempt.
+    setHasTriedCreate(true);
+    createChannel.mutate({ caldavPath, calendarName });
   };
 
   return (

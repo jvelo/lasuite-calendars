@@ -61,7 +61,10 @@
       },
       "api": {
         "error": {
-          "unexpected": "An unexpected error occurred."
+          "unexpected": "An unexpected error occurred.",
+          "forbidden": "You do not have permission to do this.",
+          "network": "Network error. Please check your connection and try again.",
+          "fileTooLarge": "The file is too large."
         }
       },
       "home": {
@@ -131,8 +134,10 @@
       "calendar": {
         "error": {
           "connection": "Failed to connect to the calendar server. Please try again later.",
+          "updateEvent": "Failed to update the event. Please try again.",
           "fetchCalendars": "Failed to load calendars. Please try again later.",
-          "fetchEvents": "Failed to load some events. Please try again later."
+          "fetchEvents": "Failed to load some events. Please try again later.",
+          "reorderCalendars": "The calendar order could not be saved. Please try again."
         },
         "views": {
           "day": "Day",
@@ -274,11 +279,16 @@
           "selectFile": "Select file",
           "import": "Import",
           "resultHeader": "Import results",
-          "imported": "events imported",
-          "duplicates": "events already existed",
-          "skipped": "events skipped (unsupported format)",
+          "imported_one": "event imported",
+          "imported_other": "events imported",
+          "duplicates_one": "event already existed",
+          "duplicates_other": "events already existed",
+          "skipped_one": "event skipped (unsupported format)",
+          "skipped_other": "events skipped (unsupported format)",
           "error": "An error occurred during import. Please try again.",
-          "errorDetails": "Error details"
+          "errorDetails": "Error details",
+          "unnamedEvent": "Event without a title",
+          "fileTooLarge": "The file is too large. The maximum size is {{max}} MB."
         },
         "subscription": {
           "title": "Calendar Subscription URL",
@@ -365,6 +375,8 @@
           "name": "Name",
           "namePlaceholder": "Calendar name",
           "nameRequired": "Name is required",
+          "error": "The calendar could not be created. Please try again.",
+          "errorMailboxRole": "You need the sender or administrator role on this mailbox to create a calendar for it.",
           "color": "Color",
           "description": "Description",
           "descriptionPlaceholder": "Calendar description (optional)",
@@ -761,7 +773,10 @@
       },
       "api": {
         "error": {
-          "unexpected": "Une erreur inattendue est survenue."
+          "unexpected": "Une erreur inattendue est survenue.",
+          "forbidden": "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
+          "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+          "fileTooLarge": "Le fichier est trop volumineux."
         }
       },
       "home": {
@@ -1095,8 +1110,10 @@
       "calendar": {
         "error": {
           "connection": "Impossible de se connecter au serveur de calendrier. Veuillez réessayer plus tard.",
+          "updateEvent": "Impossible de modifier l'événement. Veuillez réessayer.",
           "fetchCalendars": "Impossible de charger les calendriers. Veuillez réessayer plus tard.",
-          "fetchEvents": "Impossible de charger certains événements. Veuillez réessayer plus tard."
+          "fetchEvents": "Impossible de charger certains événements. Veuillez réessayer plus tard.",
+          "reorderCalendars": "Impossible d'enregistrer l'ordre des calendriers. Veuillez réessayer."
         },
         "views": {
           "day": "Jour",
@@ -1238,11 +1255,16 @@
           "selectFile": "Choisir un fichier",
           "import": "Importer",
           "resultHeader": "Résultats de l'import",
-          "imported": "événements importés",
-          "duplicates": "événements existaient déjà",
-          "skipped": "événements ignorés (format non supporté)",
+          "imported_one": "événement importé",
+          "imported_other": "événements importés",
+          "duplicates_one": "événement existait déjà",
+          "duplicates_other": "événements existaient déjà",
+          "skipped_one": "événement ignoré (format non supporté)",
+          "skipped_other": "événements ignorés (format non supporté)",
           "error": "Une erreur est survenue lors de l'importation. Veuillez réessayer.",
-          "errorDetails": "Détails des erreurs"
+          "errorDetails": "Détails des erreurs",
+          "unnamedEvent": "Événement sans titre",
+          "fileTooLarge": "Le fichier est trop volumineux. La taille maximale est de {{max}} Mo."
         },
         "subscription": {
           "title": "URL d'abonnement au calendrier",
@@ -1329,6 +1351,8 @@
           "name": "Nom du calendrier",
           "namePlaceholder": "Nom du calendrier",
           "nameRequired": "Le nom est requis",
+          "error": "Le calendrier n'a pas pu être créé. Veuillez réessayer.",
+          "errorMailboxRole": "Vous devez avoir le rôle d'expéditeur ou d'administrateur sur cette boîte pour lui créer un calendrier.",
           "color": "Couleur",
           "description": "Description",
           "descriptionPlaceholder": "Description du calendrier (optionnel)",
@@ -1725,7 +1749,10 @@
       },
       "api": {
         "error": {
-          "unexpected": "Er is een onverwachte fout opgetreden."
+          "unexpected": "Er is een onverwachte fout opgetreden.",
+          "forbidden": "U hebt geen toestemming om dit te doen.",
+          "network": "Netwerkfout. Controleer uw verbinding en probeer het opnieuw.",
+          "fileTooLarge": "Het bestand is te groot."
         }
       },
       "home": {
@@ -1806,8 +1833,10 @@
       "calendar": {
         "error": {
           "connection": "Kan geen verbinding maken met de kalenderserver. Probeer het later opnieuw.",
+          "updateEvent": "Kan het evenement niet bijwerken. Probeer het opnieuw.",
           "fetchCalendars": "Kan kalenders niet laden. Probeer het later opnieuw.",
-          "fetchEvents": "Kan sommige evenementen niet laden. Probeer het later opnieuw."
+          "fetchEvents": "Kan sommige evenementen niet laden. Probeer het later opnieuw.",
+          "reorderCalendars": "De volgorde van de kalenders kon niet worden opgeslagen. Probeer het opnieuw."
         },
         "views": {
           "day": "Dag",
@@ -1949,11 +1978,16 @@
           "selectFile": "Bestand kiezen",
           "import": "Importeren",
           "resultHeader": "Importresultaten",
-          "imported": "evenementen geïmporteerd",
-          "duplicates": "evenementen bestonden al",
-          "skipped": "evenementen overgeslagen (niet-ondersteund formaat)",
+          "imported_one": "evenement geïmporteerd",
+          "imported_other": "evenementen geïmporteerd",
+          "duplicates_one": "evenement bestond al",
+          "duplicates_other": "evenementen bestonden al",
+          "skipped_one": "evenement overgeslagen (niet-ondersteund formaat)",
+          "skipped_other": "evenementen overgeslagen (niet-ondersteund formaat)",
           "error": "Er is een fout opgetreden tijdens het importeren. Probeer het opnieuw.",
-          "errorDetails": "Foutdetails"
+          "errorDetails": "Foutdetails",
+          "unnamedEvent": "Evenement zonder titel",
+          "fileTooLarge": "Het bestand is te groot. De maximale grootte is {{max}} MB."
         },
         "subscription": {
           "title": "Kalender-abonnements-URL",
@@ -2040,6 +2074,8 @@
           "name": "Naam",
           "namePlaceholder": "Kalender naam",
           "nameRequired": "Naam is verplicht",
+          "error": "De kalender kon niet worden aangemaakt. Probeer het opnieuw.",
+          "errorMailboxRole": "U hebt de rol afzender of beheerder nodig op deze mailbox om er een kalender voor aan te maken.",
           "color": "Kleur",
           "description": "Beschrijving",
           "descriptionPlaceholder": "Kalender beschrijving (optioneel)",

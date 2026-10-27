@@ -16,7 +16,6 @@ import {
   Select,
   VariantType,
 } from "@gouvfr-lasuite/ui-components";
-import { errorToString } from "@/features/api/APIError";
 import { useAuth } from "@/features/auth/Auth";
 import { useConfig } from "@/features/config/ConfigProvider";
 import { useMailboxContext } from "@/features/mailbox/MailboxContext";
@@ -24,6 +23,7 @@ import { FeatureFlag, useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { DEFAULT_COLORS } from "@/features/calendar/constants";
 import { ErrorFilled, Mail } from "@gouvfr-lasuite/ui-components/icons";
 
+import { getCalendarSaveErrorKey } from "./utils";
 import type { CalendarModalProps } from "./types";
 
 const NO_MAILBOX_VALUE = "__none__";
@@ -137,7 +137,8 @@ export const CalendarModal = ({
         onClose();
       }
     } catch (err) {
-      setError(errorToString(err));
+      console.error("Failed to save calendar", err);
+      setError(t(getCalendarSaveErrorKey(err, mode)));
     } finally {
       setIsLoading(false);
     }

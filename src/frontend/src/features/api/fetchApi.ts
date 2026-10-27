@@ -1,5 +1,5 @@
 import { baseApiUrl, isJson } from "./utils";
-import { APIError } from "./APIError";
+import { APIError, NetworkError } from "./APIError";
 
 /**
  * Retrieves the CSRF token from the document's cookies.
@@ -64,15 +64,25 @@ export const fetchAPI = async (
   const csrfToken = getCSRFToken();
   const isFormData = init?.body instanceof FormData;
 
-  const response = await fetch(apiUrl, {
-    ...init,
-    credentials: "include",
-    headers: {
-      ...init?.headers,
-      ...(!isFormData && { "Content-Type": "application/json" }),
-      ...(csrfToken && { "X-CSRFToken": csrfToken }),
-    },
-  });
+  let response: Response;
+  try {
+    response = await fetch(apiUrl, {
+      ...init,
+      credentials: "include",
+      headers: {
+        ...init?.headers,
+        ...(!isFormData && { "Content-Type": "application/json" }),
+        ...(csrfToken && { "X-CSRFToken": csrfToken }),
+      },
+    });
+  } catch (error) {
+    // fetch() rejects with a TypeError when the request cannot reach the server.
+    // Other TypeErrors are bugs, so only this one becomes a NetworkError.
+    if (error instanceof TypeError) {
+      throw new NetworkError(error.message, { cause: error });
+    }
+    throw error;
+  }
 
   if (response.ok) {
     return response;
