@@ -1,0 +1,67 @@
+import { getCalendarDeleteMode, isCalendarOwner } from "../calendar-ownership";
+import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
+
+const calendar = (overrides: Partial<CalDavCalendar>): CalDavCalendar => ({
+  url: "http://srv/caldav/calendars/users/me@example.com/cal/",
+  displayName: "Cal",
+  includeInAvailability: true,
+  ...overrides,
+});
+
+describe("isCalendarOwner", () => {
+  it("is true for an owner instance", () => {
+    expect(
+      isCalendarOwner(calendar({ resourcetype: ["collection", "calendar", "sharedOwner"] })),
+    ).toBe(true);
+  });
+
+  it("is true when the resource type is unknown", () => {
+    expect(isCalendarOwner(calendar({}))).toBe(true);
+  });
+
+  it("is false for a sharee instance", () => {
+    expect(isCalendarOwner(calendar({ resourcetype: ["collection", "calendar", "shared"] }))).toBe(
+      false,
+    );
+  });
+
+  it("is false for a mailbox calendar instance", () => {
+    expect(
+      isCalendarOwner(
+        calendar({ resourcetype: ["collection", "calendar", "shared"], ownerType: "MAILBOX" }),
+      ),
+    ).toBe(false);
+  });
+});
+
+describe("getCalendarDeleteMode", () => {
+  it("returns delete for an owner without sharees", () => {
+    expect(getCalendarDeleteMode(calendar({ resourcetype: ["calendar", "sharedOwner"] }))).toBe(
+      "delete",
+    );
+  });
+
+  it("returns delete-shared for an owner with sharees", () => {
+    const sharee = {
+      href: "mailto:bob@example.com",
+      privilege: "read" as const,
+      status: "accepted" as const,
+    };
+    expect(
+      getCalendarDeleteMode(
+        calendar({ resourcetype: ["calendar", "sharedOwner"], sharees: [sharee] }),
+      ),
+    ).toBe("delete-shared");
+  });
+
+  it("returns remove for a sharee, even when other sharees exist", () => {
+    const sharee = {
+      href: "mailto:bob@example.com",
+      privilege: "read" as const,
+      status: "accepted" as const,
+    };
+    expect(
+      getCalendarDeleteMode(calendar({ resourcetype: ["calendar", "shared"], sharees: [sharee] })),
+    ).toBe("remove");
+  });
+});
