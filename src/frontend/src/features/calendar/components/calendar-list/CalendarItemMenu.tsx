@@ -30,6 +30,7 @@ export const CalendarItemMenu = ({
   onEdit,
   onDelete,
   onLeave,
+  isManagedByMessages,
   onShare,
   onImport,
   onSubscription,
@@ -88,13 +89,28 @@ export const CalendarItemMenu = ({
     }
 
     items.push({
-      label: t(onLeave ? "calendar.list.leaveCalendar" : "calendar.list.delete"),
+      label: t(
+        onLeave && !isManagedByMessages ? "calendar.list.leaveCalendar" : "calendar.list.delete",
+      ),
       icon: <Trash />,
-      callback: onLeave ?? onDelete,
+      callback: isManagedByMessages ? undefined : (onLeave ?? onDelete),
+      isDisabled: isManagedByMessages,
+      subText: isManagedByMessages ? t("calendar.list.managedByMessages") : undefined,
     });
 
     return items;
-  }, [t, onEdit, onDelete, onLeave, onShare, onImport, onSubscription, onMoveUp, onMoveDown]);
+  }, [
+    t,
+    onEdit,
+    onDelete,
+    onLeave,
+    isManagedByMessages,
+    onShare,
+    onImport,
+    onSubscription,
+    onMoveUp,
+    onMoveDown,
+  ]);
 
   return (
     <DropdownMenu options={options} isOpen={isOpen} onOpenChange={onOpenChange}>
