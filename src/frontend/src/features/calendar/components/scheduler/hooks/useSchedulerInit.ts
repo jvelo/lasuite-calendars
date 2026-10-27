@@ -301,9 +301,9 @@ export const useSchedulerInit = ({
               const allEventsArrays = await Promise.all(allEventsPromises);
               return allEventsArrays.flat() as ECEvent[];
             } catch (error) {
-              // Keep returning [] so one failure doesn't blank the whole view,
-              // but log it: an empty calendar can mean a failed fetch, not an
-              // empty one (issue #74).
+              // A thrown error discards the results of all calendars, so the
+              // view shows no events. Log it and show a toast, because an
+              // empty view can mean a failed fetch (issue #74).
               console.error("[useSchedulerInit] Error fetching events (rendering empty):", error);
               notifyFetchEventsError();
               return [];

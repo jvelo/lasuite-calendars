@@ -1,10 +1,11 @@
-// Web API polyfills. Must be the first import of main.tsx: ES imports are
-// hoisted, so inline statements in main.tsx would only run after every other
-// module has evaluated. core-js (vite plugin-legacy) does not cover Web APIs.
+// Web API polyfills. This module must be the first import of main.tsx.
+// ES imports are hoisted, so inline statements in main.tsx run only after
+// all other modules. The core-js polyfills of plugin-legacy do not supply
+// crypto.randomUUID.
 
-// crypto.randomUUID: Chrome 109 exposes it only in secure contexts; ANCT
-// instances reached over plain http don't have it. Several services call it
-// when creating calendars and events.
+// Browsers expose crypto.randomUUID only in secure contexts. Instances
+// served in insecure contexts do not have it. Some services call it when they
+// create calendars and events.
 if (typeof crypto !== "undefined" && typeof crypto.randomUUID !== "function") {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (crypto as any).randomUUID = (): string => {

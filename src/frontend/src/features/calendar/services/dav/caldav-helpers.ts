@@ -511,8 +511,8 @@ export class DavCallError extends Error {
 }
 
 /**
- * Whether Intl can convert dates in a timezone. Old ICU builds and
- * non-IANA names (e.g. "Romance Standard Time") make Intl throw.
+ * Whether Intl.DateTimeFormat accepts the timezone identifier. Old ICU
+ * builds and non-IANA names (e.g. "Romance Standard Time") make it throw.
  */
 export const isTimezoneSupportedByIntl = (timezone: string): boolean => {
   try {
@@ -554,7 +554,8 @@ export function davFailure(
  * as `{ success: false, … }` by `davRequest`, so callers should
  * `throw davFailure(result, "...")` inside the operation when a DAV
  * call fails — this wrapper then catches that throw, re-prefixes the
- * message, and preserves the HTTP status for the caller.
+ * message, and preserves the HTTP status and the error code for the
+ * caller.
  *
  * 401 → redirect-to-login lives inside `davRequest`, not here.
  */
