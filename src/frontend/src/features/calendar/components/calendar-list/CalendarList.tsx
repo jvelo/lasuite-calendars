@@ -16,6 +16,7 @@ import { SubscriptionUrlModal } from "./SubscriptionUrlModal";
 import { CalendarListItem } from "./CalendarListItem";
 import { useCalendarListState } from "./hooks/useCalendarListState";
 import { extractCaldavPath } from "./utils";
+import { getCalendarDeleteMode } from "../../utils/calendar-ownership";
 import { Plus, ChevronDown } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
@@ -36,6 +37,21 @@ export const CalendarList = () => {
     calendarRef,
     isLoading: isCalendarLoading,
   } = useCalendarContext();
+
+  const handleDeleteError = useCallback(
+    (calendar: CalDavCalendar) => {
+      const message =
+        getCalendarDeleteMode(calendar) === "remove"
+          ? t("calendar.removeCalendar.error")
+          : t("calendar.deleteCalendar.error");
+      addToast(
+        <ToasterItem type="error" closeButton>
+          {message}
+        </ToasterItem>,
+      );
+    },
+    [t],
+  );
 
   const {
     modalState,
@@ -61,6 +77,7 @@ export const CalendarList = () => {
     createCalendar,
     updateCalendar,
     deleteCalendar,
+    onDeleteError: handleDeleteError,
   });
 
   // Onboarding: show modal when user has no calendars at all
@@ -285,7 +302,7 @@ export const CalendarList = () => {
 
       <DeleteConfirmModal
         isOpen={deleteState.isOpen}
-        calendarName={deleteState.calendar?.displayName || ""}
+        calendar={deleteState.calendar}
         onConfirm={handleConfirmDelete}
         onCancel={handleCloseDeleteModal}
         isLoading={deleteState.isLoading}
