@@ -131,6 +131,7 @@
       "calendar": {
         "error": {
           "connection": "Failed to connect to the calendar server. Please try again later.",
+          "updateEvent": "Failed to update the event. Please try again.",
           "fetchCalendars": "Failed to load calendars. Please try again later."
         },
         "views": {
@@ -1105,6 +1106,7 @@
       "calendar": {
         "error": {
           "connection": "Impossible de se connecter au serveur de calendrier. Veuillez réessayer plus tard.",
+          "updateEvent": "Impossible de modifier l'événement. Veuillez réessayer.",
           "fetchCalendars": "Impossible de charger les calendriers. Veuillez réessayer plus tard."
         },
         "views": {
@@ -1826,6 +1828,7 @@
       "calendar": {
         "error": {
           "connection": "Kan geen verbinding maken met de kalenderserver. Probeer het later opnieuw.",
+          "updateEvent": "Kan het evenement niet bijwerken. Probeer het opnieuw.",
           "fetchCalendars": "Kan kalenders niet laden. Probeer het later opnieuw."
         },
         "views": {
