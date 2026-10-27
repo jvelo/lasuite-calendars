@@ -1444,19 +1444,6 @@ class InternalApiPlugin extends ServerPlugin
     }
 
     /**
-     * Resolve the internal calendar ID from a principal URI and calendar URI.
-     *
-     * @param string $principalUri e.g. "principals/users/user@example.com"
-     * @param string $calendarUri  e.g. "a1b2c3d4-..."
-     * @return array|null The calendarId pair, or null if not found.
-     */
-    private function resolveCalendarId(string $principalUri, string $calendarUri)
-    {
-        $info = $this->resolveCalendarInfo($principalUri, $calendarUri);
-        return $info === null ? null : $info['id'];
-    }
-
-    /**
      * Resolve calendar metadata needed by the import endpoint.
      *
      * Returns the SabreDAV calendarId pair AND the calendar's

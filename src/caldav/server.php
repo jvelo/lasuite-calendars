@@ -250,27 +250,6 @@ $server->addPlugin(new CalDAV\SharingPlugin());
 $server->addPlugin(new MailboxPlugin($pdo));
 $server->addPlugin(new ShareAccessPlugin($pdo));
 
-// Debug logging for POST requests - commented out to avoid PII in logs
-// Uncomment for local debugging only, never in production.
-// $server->on('method:POST', function($request) {
-//     $contentType = $request->getHeader('Content-Type');
-//     $path = $request->getPath();
-//     $body = $request->getBodyAsString();
-//     error_log("[sabre/dav] POST request received:");
-//     error_log("[sabre/dav] Path: " . $path);
-//     error_log("[sabre/dav] Content-Type: " . $contentType);
-//     error_log("[sabre/dav] Body: " . substr($body, 0, 1000));
-//     $request->setBody($body);
-// }, 50);
-//
-// $server->on('afterMethod:POST', function($request, $response) {
-//     error_log("[sabre/dav] POST response status: " . $response->getStatus());
-//     $body = $response->getBodyAsString();
-//     if ($body) {
-//         error_log("[sabre/dav] POST response body: " . substr($body, 0, 500));
-//     }
-// }, 50);
-
 // Log unhandled exceptions, and make sure the client never sees raw
 // internal-error details. SabreDAV's error renderer builds the
 // multistatus body from BOTH `$e->getMessage()` (which can carry
