@@ -8,7 +8,21 @@ const translate = async (language: string, key: string, options?: Record<string,
   return i18n.t(key, options);
 };
 
+const flattenKeys = (value: unknown, prefix = ""): string[] => {
+  if (typeof value !== "object" || value === null) return [prefix];
+  return Object.entries(value).flatMap(([key, child]) =>
+    flattenKeys(child, prefix ? `${prefix}.${key}` : key),
+  );
+};
+
 describe("translations", () => {
+  const englishKeys = flattenKeys(resources.en.translation);
+
+  it.each(["fr", "nl"] as const)("%s has every English key", (language) => {
+    const keys = new Set(flattenKeys(resources[language].translation));
+    expect(englishKeys.filter((key) => !keys.has(key))).toEqual([]);
+  });
+
   describe("calendar.views.moreEvents", () => {
     it.each([
       ["en-us", 1, "+1 more"],
@@ -20,5 +34,11 @@ describe("translations", () => {
     ])("translates %s with count %i", async (language, count, expected) => {
       expect(await translate(language, "calendar.views.moreEvents", { count })).toBe(expected);
     });
+  });
+
+  it("translates the share errors in French", async () => {
+    expect(await translate("fr-fr", "calendar.shareCalendar.errorOwner")).toBe(
+      "Vous ne pouvez pas partager un calendrier avec son propriétaire.",
+    );
   });
 });
