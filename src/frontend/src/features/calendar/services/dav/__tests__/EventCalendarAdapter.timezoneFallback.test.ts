@@ -45,4 +45,18 @@ describe("toIcsEvent timezone fallback", () => {
     expect(text).toMatch(/^DTEND[^:\r\n]*:20260129T150000Z\r?$/m);
     expect(text).not.toContain("TZID");
   });
+
+  it("does not mark a timezone as failed after an invalid date", () => {
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    const adapter = new EventCalendarAdapter();
+    const invalid = new Date(Number.NaN);
+    const valid = new Date(Date.UTC(2026, 0, 29, 13, 0));
+
+    expect(() => adapter.getDateComponentsInTimezone(invalid, "Europe/Paris")).toThrow(RangeError);
+    expect(adapter.getTimezoneOffset(invalid, "Europe/Paris")).toBe("+0000");
+
+    expect(adapter.getDateComponentsInTimezone(valid, "Europe/Paris").hours).toBe(14);
+    expect(adapter.getTimezoneOffset(valid, "Europe/Paris")).toBe("+0100");
+    expect(warn).not.toHaveBeenCalled();
+  });
 });

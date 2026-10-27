@@ -955,15 +955,13 @@ export class EventCalendarAdapter {
     if (this.failedComponentTimezones.has(timezone)) {
       return this.utcDateComponents(date);
     }
-    try {
-      let formatter = this.dateComponentsFormatterCache.get(timezone);
-      if (!formatter) {
-        if (
-          this.dateComponentsFormatterCache.size >= EventCalendarAdapter.FORMATTER_CACHE_MAX_SIZE
-        ) {
-          const firstKey = this.dateComponentsFormatterCache.keys().next().value;
-          this.dateComponentsFormatterCache.delete(firstKey as string);
-        }
+    let formatter = this.dateComponentsFormatterCache.get(timezone);
+    if (!formatter) {
+      if (this.dateComponentsFormatterCache.size >= EventCalendarAdapter.FORMATTER_CACHE_MAX_SIZE) {
+        const firstKey = this.dateComponentsFormatterCache.keys().next().value;
+        this.dateComponentsFormatterCache.delete(firstKey as string);
+      }
+      try {
         formatter = new Intl.DateTimeFormat("en-US", {
           timeZone: timezone,
           year: "numeric",
@@ -974,34 +972,36 @@ export class EventCalendarAdapter {
           second: "2-digit",
           hour12: false,
         });
-        this.dateComponentsFormatterCache.set(timezone, formatter);
+      } catch (error) {
+        // Intl throws a RangeError for a timezone that it does not know.
+        // Without this fallback, the conversion throws. UTC components can
+        // be wrong by the timezone offset.
+        this.failedComponentTimezones.add(timezone);
+        console.warn(
+          `[EventCalendarAdapter] getDateComponentsInTimezone failed for timezone "${timezone}" — falling back to UTC components:`,
+          error,
+        );
+        return this.utcDateComponents(date);
       }
-      const parts = formatter.formatToParts(date);
-
-      const get = (type: Intl.DateTimeFormatPartTypes): number => {
-        const part = parts.find((p) => p.type === type);
-        return part ? parseInt(part.value, 10) : 0;
-      };
-
-      return {
-        year: get("year"),
-        month: get("month"),
-        day: get("day"),
-        hours: get("hour") === 24 ? 0 : get("hour"), // Intl may return 24 for midnight
-        minutes: get("minute"),
-        seconds: get("second"),
-      };
-    } catch (error) {
-      // Intl throws a RangeError for a timezone that it does not know.
-      // Without this fallback, the conversion throws. UTC components can be
-      // wrong by the timezone offset.
-      this.failedComponentTimezones.add(timezone);
-      console.warn(
-        `[EventCalendarAdapter] getDateComponentsInTimezone failed for timezone "${timezone}" — falling back to UTC components:`,
-        error,
-      );
-      return this.utcDateComponents(date);
+      this.dateComponentsFormatterCache.set(timezone, formatter);
     }
+    // Only the constructor checks the timezone. Thus, an invalid date
+    // throws here and does not mark the timezone as failed.
+    const parts = formatter.formatToParts(date);
+
+    const get = (type: Intl.DateTimeFormatPartTypes): number => {
+      const part = parts.find((p) => p.type === type);
+      return part ? parseInt(part.value, 10) : 0;
+    };
+
+    return {
+      year: get("year"),
+      month: get("month"),
+      day: get("day"),
+      hours: get("hour") === 24 ? 0 : get("hour"), // Intl may return 24 for midnight
+      minutes: get("minute"),
+      seconds: get("second"),
+    };
   }
 
   private utcDateComponents(date: Date): DateComponents {
@@ -1027,19 +1027,30 @@ export class EventCalendarAdapter {
     if (this.failedOffsetTimezones.has(timezone)) {
       return "+0000";
     }
-    try {
-      let formatter = this.offsetFormatterCache.get(timezone);
-      if (!formatter) {
-        if (this.offsetFormatterCache.size >= EventCalendarAdapter.FORMATTER_CACHE_MAX_SIZE) {
-          const firstKey = this.offsetFormatterCache.keys().next().value;
-          this.offsetFormatterCache.delete(firstKey as string);
-        }
+    let formatter = this.offsetFormatterCache.get(timezone);
+    if (!formatter) {
+      if (this.offsetFormatterCache.size >= EventCalendarAdapter.FORMATTER_CACHE_MAX_SIZE) {
+        const firstKey = this.offsetFormatterCache.keys().next().value;
+        this.offsetFormatterCache.delete(firstKey as string);
+      }
+      try {
         formatter = new Intl.DateTimeFormat("en-US", {
           timeZone: timezone,
           timeZoneName: "longOffset",
         });
-        this.offsetFormatterCache.set(timezone, formatter);
+      } catch (error) {
+        // Intl can throw for an unknown timezone or for "longOffset". The
+        // "+0000" fallback moves times by the real offset, so log a warning.
+        this.failedOffsetTimezones.add(timezone);
+        console.warn(
+          `[EventCalendarAdapter] getTimezoneOffset failed for timezone "${timezone}" — falling back to +0000:`,
+          error,
+        );
+        return "+0000";
       }
+      this.offsetFormatterCache.set(timezone, formatter);
+    }
+    try {
       const parts = formatter.formatToParts(date);
       const tzPart = parts.find((p) => p.type === "timeZoneName");
 
@@ -1054,14 +1065,9 @@ export class EventCalendarAdapter {
         }
       }
       return "+0000";
-    } catch (error) {
-      // Intl can throw for an unknown timezone or for "longOffset". The
-      // "+0000" fallback moves times by the real offset, so log a warning.
-      this.failedOffsetTimezones.add(timezone);
-      console.warn(
-        `[EventCalendarAdapter] getTimezoneOffset failed for timezone "${timezone}" — falling back to +0000:`,
-        error,
-      );
+    } catch {
+      // An invalid date makes formatToParts throw. The timezone is valid,
+      // so do not mark it as failed.
       return "+0000";
     }
   }
