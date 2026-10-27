@@ -78,6 +78,12 @@
       display: none;
     }
 
+    // Match the fixed sidebar and row sizes in the subgrid fallback.
+    .ec {
+      --ec-fallback-sidebar-width: 90px;
+      --ec-fallback-row-height: 24px;
+    }
+
     // Shrink the resource label column
     .ec-sidebar {
       width: 90px !important;
