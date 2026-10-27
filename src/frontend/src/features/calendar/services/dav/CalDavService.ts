@@ -51,7 +51,6 @@ import {
   parseCalendarOrder,
   getCalendarUrlFromEventUrl,
   asResult,
-  assertEventTimezoneSupported,
   davFailure,
   type ShareeXmlParams,
   type CalendarProps,
@@ -522,7 +521,6 @@ export class CalDavService {
       if (!event) {
         throw new Error("No event found in ICS data");
       }
-      assertEventTimezoneSupported(event);
 
       // If this EXDATE would leave zero valid occurrences, signal the
       // caller to delete the entire event instead (SabreDAV rejects
@@ -610,7 +608,6 @@ export class CalDavService {
       if (!sourceEvent) {
         throw new Error("Source event not found in ICS data");
       }
-      assertEventTimezoneSupported(sourceEvent);
 
       // If adding EXDATE would leave zero occurrences, signal caller to
       // delete the entire event instead (SabreDAV rejects empty series).
@@ -710,7 +707,6 @@ export class CalDavService {
       if (!sourceEvent.recurrenceRule) {
         throw new Error("Source event has no recurrence rule");
       }
-      assertEventTimezoneSupported(sourceEvent);
 
       // Set RRULE UNTIL to day before cutoff
       const untilDate = new Date(cutoffDate);
@@ -795,7 +791,6 @@ export class CalDavService {
       if (!sourceEvent) {
         throw new Error("Source event not found in ICS data");
       }
-      assertEventTimezoneSupported(sourceEvent);
 
       // occurrenceDate is already in "fake UTC" format (UTC components = local timezone
       // time), since it comes from adapter.toIcsEvent() which creates fake UTC dates.

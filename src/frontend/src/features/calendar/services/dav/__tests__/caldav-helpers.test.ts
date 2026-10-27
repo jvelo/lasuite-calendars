@@ -18,9 +18,7 @@ import {
   parseCalendarComponents,
   parseCalendarOrder,
   getCalendarUrlFromEventUrl,
-  assertEventTimezoneSupported,
 } from "../caldav-helpers";
-import type { IcsDateObject, IcsEvent } from "ts-ics";
 import { parseDavErrorMessage } from "@/features/calendar/utils/DavClient";
 
 describe("caldav-helpers", () => {
@@ -554,27 +552,5 @@ describe("caldav-helpers", () => {
         expect(getCalendarUrlFromEventUrl(eventUrl)).toBe("/calendars/user/calendar-1/");
       });
     });
-  });
-});
-
-describe("assertEventTimezoneSupported", () => {
-  const date = new Date(Date.UTC(2026, 0, 29, 15, 0));
-  const local = (timezone: string) => ({ date, timezone, tzoffset: "+0100" });
-  const eventStarting = (start: IcsDateObject): IcsEvent => ({
-    uid: "event-uid",
-    stamp: { date: new Date() },
-    start,
-    end: start,
-    summary: "Weekly",
-  });
-
-  it("allows a timed start in a supported timezone", () => {
-    const event = eventStarting({ type: "DATE-TIME", date, local: local("Europe/Paris") });
-    expect(() => assertEventTimezoneSupported(event)).not.toThrow();
-  });
-
-  it("allows an all-day start, even with an unsupported TZID", () => {
-    const event = eventStarting({ type: "DATE", date, local: local("Romance Standard Time") });
-    expect(() => assertEventTimezoneSupported(event)).not.toThrow();
   });
 });

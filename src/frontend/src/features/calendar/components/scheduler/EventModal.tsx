@@ -23,7 +23,6 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useConfig } from "@/features/config/ConfigProvider";
 import { FeatureFlag, useFeatureFlag } from "@/hooks/useFeatureFlag";
 import { SectionRow } from "./event-modal-sections/SectionRow";
-import { errorMessage } from "./utils/errorMessage";
 import { Meet, Pin, Calendar, Edit, Lock } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { IcsEvent, IcsOrganizer } from "ts-ics";
@@ -191,7 +190,7 @@ export const EventModal = ({
       onClose();
     } catch (error) {
       console.error("Failed to save event:", error);
-      showError(errorMessage(t, error, t("api.error.unexpected")));
+      showError(t("api.error.unexpected"));
     } finally {
       setIsLoading(false);
     }
@@ -219,7 +218,7 @@ export const EventModal = ({
       onClose();
     } catch (error) {
       console.error("Failed to delete event:", error);
-      showError(errorMessage(t, error, t("api.error.unexpected")));
+      showError(t("api.error.unexpected"));
     } finally {
       setIsLoading(false);
     }

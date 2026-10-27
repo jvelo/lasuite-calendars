@@ -8,12 +8,7 @@ import { IcsEvent, IcsDateObject } from "ts-ics";
 import { useTranslation } from "react-i18next";
 import { useAuth } from "@/features/auth/Auth";
 import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster/Toaster";
-import {
-  assertEventTimezoneSupported,
-  davFailure,
-  getCalendarUrlFromEventUrl,
-} from "../../../services/dav/caldav-helpers";
-import { errorMessage } from "../utils/errorMessage";
+import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
 
 import type {
   EventCalendarEvent,
@@ -394,7 +389,7 @@ export const useSchedulerHandlers = ({
         );
 
         if (!result.success) {
-          throw davFailure(result, "Failed to create override instance");
+          throw new Error(result.error || "Failed to create override instance");
         }
       } else if (option === "future") {
         // Truncate the original series and create a new recurring series
@@ -423,7 +418,7 @@ export const useSchedulerHandlers = ({
         );
 
         if (!truncateResult.success) {
-          throw davFailure(truncateResult, "Failed to truncate series");
+          throw new Error(truncateResult.error || "Failed to truncate series");
         }
 
         // Create a new recurring event starting from the modified occurrence
@@ -574,7 +569,7 @@ export const useSchedulerHandlers = ({
             );
 
             if (!deleteResult.success) {
-              throw davFailure(deleteResult, "Failed to delete override instance");
+              throw new Error(deleteResult.error || "Failed to delete override instance");
             }
             shouldDeleteEntireEvent = !!deleteResult.data?.shouldDeleteEntireEvent;
           } else {
@@ -587,7 +582,7 @@ export const useSchedulerHandlers = ({
             );
 
             if (!addExdateResult.success) {
-              throw davFailure(addExdateResult, "Failed to add EXDATE");
+              throw new Error(addExdateResult.error || "Failed to add EXDATE");
             }
             shouldDeleteEntireEvent = !!addExdateResult.data?.shouldDeleteEntireEvent;
           }
@@ -615,8 +610,6 @@ export const useSchedulerHandlers = ({
           const sourceEvents =
             fetchResult.success && fetchResult.data ? (fetchResult.data.data.events ?? []) : [];
           const sourceEvent = sourceEvents.find((e) => e.uid === event.uid && !e.recurrenceId);
-          // The comparison below needs a local occurrence date.
-          if (sourceEvent) assertEventTimezoneSupported(sourceEvent);
 
           // If deleting from first occurrence, delete entire series
           // Use local.date (fake UTC) to match occurrenceDate format (also fake UTC)
@@ -649,7 +642,7 @@ export const useSchedulerHandlers = ({
                 ),
             );
             if (!truncateResult.success) {
-              throw davFailure(truncateResult, "Failed to truncate series");
+              throw new Error(truncateResult.error || "Failed to truncate series");
             }
           }
 
@@ -816,7 +809,7 @@ export const useSchedulerHandlers = ({
         }
 
         if (!result.success) {
-          throw davFailure(result, "Failed to respond to invitation");
+          throw new Error(result.error || "Failed to respond to invitation");
         }
 
         addSuccessToast(t("rsvp.responseSent"));
@@ -825,7 +818,7 @@ export const useSchedulerHandlers = ({
           calendarRef.current.refetchEvents();
         }
       } catch (error) {
-        addErrorToast(errorMessage(t, error, t("rsvp.failed")));
+        addErrorToast(t("rsvp.failed"));
         console.error("Error responding to invitation:", error);
         throw error;
       }
@@ -935,7 +928,7 @@ export const useSchedulerHandlers = ({
           );
 
           if (!result.success) {
-            addErrorToast(errorMessage(t, result, result.error || "Failed to update event"));
+            addErrorToast(result.error || "Failed to update event");
             info.revert();
             return;
           }
@@ -976,9 +969,7 @@ export const useSchedulerHandlers = ({
           );
 
           if (!truncateResult.success) {
-            addErrorToast(
-              errorMessage(t, truncateResult, truncateResult.error || "Failed to truncate series"),
-            );
+            addErrorToast(truncateResult.error || "Failed to truncate series");
             info.revert();
             return;
           }
@@ -1122,7 +1113,6 @@ export const useSchedulerHandlers = ({
       calendarRef,
       calendarUrl,
       getOccurrenceDateFromInfo,
-      t,
     ],
   );
 

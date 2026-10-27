@@ -4,9 +4,7 @@
  * Factorized utilities for XML building, DAV requests, and error handling.
  */
 
-import type { IcsEvent } from "ts-ics";
-
-import type { SharePrivilege, CalDavErrorCode, CalDavResponse } from "./types/caldav-service";
+import type { SharePrivilege, CalDavResponse } from "./types/caldav-service";
 
 /** XML namespace prefix lookup used when building prop keys in PROPFIND
  * bodies. Mirrors what tsdav's `DAVNamespaceShort` used to provide; kept
@@ -491,59 +489,28 @@ export function getCalendarUrlFromEventUrl(eventUrl: string): string {
 // Result wrapper
 // ============================================================================
 
-/** Error type that preserves an HTTP status code and an error code
- * through `asResult`.
+/** Error type that preserves an HTTP status code through `asResult`.
  *
  * Throw this (instead of a bare `Error`) when a DAV call fails so the
- * caller's `CalDavResponse.status` and `code` are populated. Lets
- * callers branch on the HTTP status (e.g. retry on 412) or the code
- * without parsing error strings.
+ * caller's `CalDavResponse.status` is populated. Lets callers branch on
+ * the HTTP status (e.g. retry on 412) without parsing error strings.
  */
 export class DavCallError extends Error {
   readonly status?: number;
-  readonly code?: CalDavErrorCode;
-  constructor(message: string, status?: number, code?: CalDavErrorCode) {
+  constructor(message: string, status?: number) {
     super(message);
     this.name = "DavCallError";
     this.status = status;
-    this.code = code;
   }
 }
 
-/**
- * Whether Intl.DateTimeFormat accepts the timezone identifier. Old ICU
- * builds and non-IANA names (e.g. "Romance Standard Time") make it throw.
- */
-export const isTimezoneSupportedByIntl = (timezone: string): boolean => {
-  try {
-    new Intl.DateTimeFormat("en-US", { timeZone: timezone });
-    return true;
-  } catch {
-    return false;
-  }
-};
-
-/**
- * Throw a `DavCallError` with code "unsupported-timezone" when Intl cannot
- * convert the event's start timezone. Local dates computed in that
- * timezone are then wrong. For example, an occurrence date falls back to
- * UTC and no longer matches the event's dates.
- * All-day events and events without a timezone pass.
- */
-export const assertEventTimezoneSupported = (event: IcsEvent): void => {
-  if (event.start.type === "DATE") return;
-  const timezone = event.start.local?.timezone;
-  if (!timezone || isTimezoneSupportedByIntl(timezone)) return;
-  throw new DavCallError(`Unsupported timezone: ${timezone}`, undefined, "unsupported-timezone");
-};
-
-/** Build a `DavCallError` from a failed `davRequest` or `CalDavResponse`. */
+/** Build a `DavCallError` from a failed `davRequest` result. */
 export function davFailure(
-  response: { error?: string; status?: number; code?: CalDavErrorCode },
+  response: { error?: string; status?: number },
   fallback: string,
 ): DavCallError {
   const message = response.error ?? `${fallback}: ${response.status}`;
-  return new DavCallError(message, response.status, response.code);
+  return new DavCallError(message, response.status);
 }
 
 /** Run an async operation and pack its outcome into a `CalDavResponse`.
@@ -554,8 +521,7 @@ export function davFailure(
  * as `{ success: false, … }` by `davRequest`, so callers should
  * `throw davFailure(result, "...")` inside the operation when a DAV
  * call fails — this wrapper then catches that throw, re-prefixes the
- * message, and preserves the HTTP status and the error code for the
- * caller.
+ * message, and preserves the HTTP status for the caller.
  *
  * 401 → redirect-to-login lives inside `davRequest`, not here.
  */
@@ -568,12 +534,11 @@ export async function asResult<T>(
     return { success: true, data };
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    const { status, code } = error instanceof DavCallError ? error : {};
+    const status = error instanceof DavCallError ? error.status : undefined;
     return {
       success: false,
       error: `${errorPrefix}: ${message}`,
       status,
-      code,
     };
   }
 }
