@@ -3803,3 +3803,89 @@ class TestNonOwnerCannotReshare:
         # Alice's level must be unchanged — the afterPost guard refuses the
         # share_access_level write for a non-owner principal.
         _assert_share_level(owner_client, owner.email, cal_id, alice.email, "freebusy")
+
+
+def _instance_uri(calendar):
+    """Return the last path segment of a calendar URL."""
+    return unquote(str(calendar.url)).rstrip("/").rsplit("/", maxsplit=1)[-1]
+
+
+def _delete_calendar(client, user_email, cal_uri):
+    """DELETE a calendar collection via the CalDAV proxy."""
+    return client.generic("DELETE", f"/caldav/calendars/users/{user_email}/{cal_uri}/")
+
+
+class TestCalendarDeletion:
+    """DELETE on a calendar collection, for owners and for sharees.
+
+    The owner deletes the calendar for every user. A sharee deletes
+    only their own instance; the calendar and the other shares stay.
+    """
+
+    def test_owner_delete_removes_calendar_for_every_sharee(self):
+        """The owner's DELETE removes the calendar and all its shares."""
+        org = factories.OrganizationFactory(external_id="del-owner")
+        owner, owner_client, cal_path = _create_user_with_calendar(org, "owner-del")
+        sharee, _, _ = _create_user_with_calendar(org, "sharee-del")
+        cal_id = _get_cal_id(cal_path)
+        shared_cal = _share_and_find(owner_client, owner, cal_id, sharee, "read")
+
+        resp = _delete_calendar(owner_client, owner.email, cal_id)
+
+        assert resp.status_code == 204
+        assert _propfind_calendar(owner_client, owner.email, cal_id).status_code == 404
+        assert str(shared_cal.url) not in _get_calendar_urls(sharee)
+
+    def test_sharee_delete_removes_only_own_access(self):
+        """A sharee's DELETE removes their instance only."""
+        org = factories.OrganizationFactory(external_id="del-sharee")
+        owner, owner_client, cal_path = _create_user_with_calendar(org, "owner-dsh")
+        leaver, leaver_client, _ = _create_user_with_calendar(org, "leaver-dsh")
+        stayer, _, _ = _create_user_with_calendar(org, "stayer-dsh")
+        cal_id = _get_cal_id(cal_path)
+        _put_event(owner_client, owner.email, cal_id, "del-sharee-ev", "Kept")
+        leaver_cal = _share_and_find(owner_client, owner, cal_id, leaver, "read-write")
+        stayer_cal = _share_and_find(owner_client, owner, cal_id, stayer, "read")
+
+        resp = _delete_calendar(leaver_client, leaver.email, _instance_uri(leaver_cal))
+
+        assert resp.status_code == 204
+        assert str(leaver_cal.url) not in _get_calendar_urls(leaver)
+        assert str(stayer_cal.url) in _get_calendar_urls(stayer)
+        event = _get_event(owner_client, owner.email, cal_id, "del-sharee-ev")
+        assert event.status_code == 200
+        level = _read_share_level(owner_client, owner.email, cal_id, leaver.email)
+        assert level is None
+        _assert_share_level(owner_client, owner.email, cal_id, stayer.email, "read")
+
+    def test_sync_managed_instance_delete_is_refused(self):
+        """DELETE of a sync-managed mailbox instance returns 403.
+
+        Regression: SabreDAV deleted the sharee row, and the next
+        mailbox ACL sync created it again. The calendar came back
+        after a page refresh.
+        """
+        org = factories.OrganizationFactory(external_id="del-sync")
+        owner, _, _ = _create_user_with_calendar(org, "owner-dsync")
+        member, member_client, _ = _create_user_with_calendar(org, "member-dsync")
+        mailbox_email = "team@del-sync.com"
+        _create_mailbox_calendar(owner, mailbox_email, org)
+        before_urls = _list_calendar_urls(member)
+        _sync_mailbox_acls(
+            owner,
+            [
+                {
+                    "user_email": member.email,
+                    "mailbox_email": mailbox_email,
+                    "privilege": "read-write",
+                }
+            ],
+        )
+        cal_uri = _find_shared_cal_uri(member, before_urls=before_urls)
+
+        resp = _delete_calendar(member_client, member.email, cal_uri)
+
+        assert resp.status_code == 403
+        assert any(
+            url.rstrip("/").endswith(cal_uri) for url in _list_calendar_urls(member)
+        )
