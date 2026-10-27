@@ -285,7 +285,7 @@ export const CalendarList = () => {
 
       <DeleteConfirmModal
         isOpen={deleteState.isOpen}
-        calendarName={deleteState.calendar?.displayName || ""}
+        calendar={deleteState.calendar}
         onConfirm={handleConfirmDelete}
         onCancel={handleCloseDeleteModal}
         isLoading={deleteState.isLoading}
