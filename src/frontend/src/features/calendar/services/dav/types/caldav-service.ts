@@ -58,6 +58,13 @@ export type CalDavCalendar = {
    */
   mailboxEmail?: string;
   /**
+   * True when the mailbox ACL sync manages this calendar instance
+   * (``LS:calendar-sync-managed``). Messages controls this access, so
+   * the user cannot delete the instance. A manual share of a mailbox
+   * calendar is not sync-managed.
+   */
+  syncManaged?: boolean;
+  /**
    * Sharees parsed from the ``CS:invite`` payload returned alongside
    * the standard calendar properties. The share modal reads this
    * directly instead of issuing a second PROPFIND.

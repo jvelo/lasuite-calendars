@@ -266,7 +266,8 @@
           "subscription": "Subscription URL",
           "moveUp": "Move up",
           "moveDown": "Move down",
-          "options": "Options"
+          "options": "Options",
+          "managedByMessages": "Access managed in Messages"
         },
         "importEvents": {
           "title": "Import events",
@@ -391,7 +392,8 @@
         "deleteCalendar": {
           "title": "Delete calendar",
           "message": "Are you sure you want to delete the calendar \"{{name}}\"? This action cannot be undone.",
-          "confirm": "Delete"
+          "confirm": "Delete",
+          "error": "The calendar could not be deleted."
         },
         "shareCalendar": {
           "title": "Share calendar",
@@ -1225,7 +1227,8 @@
           "subscription": "URL d'abonnement",
           "moveUp": "Déplacer vers le haut",
           "moveDown": "Déplacer vers le bas",
-          "options": "Options"
+          "options": "Options",
+          "managedByMessages": "Accès géré dans Messages"
         },
         "importEvents": {
           "title": "Importer des événements",
@@ -1350,7 +1353,8 @@
         "deleteCalendar": {
           "title": "Supprimer le calendrier",
           "message": "Êtes-vous sûr de vouloir supprimer le calendrier \"{{name}}\" ? Cette action est irréversible.",
-          "confirm": "Supprimer"
+          "confirm": "Supprimer",
+          "error": "Impossible de supprimer le calendrier."
         },
         "shareCalendar": {
           "title": "Partager le calendrier",
@@ -1931,7 +1935,8 @@
           "subscription": "Abonnements-URL",
           "moveUp": "Omhoog verplaatsen",
           "moveDown": "Omlaag verplaatsen",
-          "options": "Opties"
+          "options": "Opties",
+          "managedByMessages": "Toegang beheerd in Messages"
         },
         "importEvents": {
           "title": "Evenementen importeren",
@@ -2056,7 +2061,8 @@
         "deleteCalendar": {
           "title": "Kalender verwijderen",
           "message": "Weet u zeker dat u de kalender \"{{name}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-          "confirm": "Verwijderen"
+          "confirm": "Verwijderen",
+          "error": "De kalender kon niet worden verwijderd."
         },
         "shareCalendar": {
           "title": "Kalender delen",
