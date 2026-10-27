@@ -884,7 +884,7 @@ export class CalDavService {
       });
 
       if (!result.success || result.body === undefined) {
-        throw new Error(result.error ?? `Event not found: ${result.status}`);
+        throw davFailure(result, "Event not found");
       }
 
       const calendarUrl = getCalendarUrlFromEventUrl(eventUrl);

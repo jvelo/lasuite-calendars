@@ -9,6 +9,7 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/features/auth/Auth";
 import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster/Toaster";
 import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
+import { findRsvpBlocker, RSVP_BLOCKER_MESSAGE_KEYS, type RsvpBlocker } from "../rsvp-blocker";
 
 import type {
   EventCalendarEvent,
@@ -682,6 +683,12 @@ export const useSchedulerHandlers = ({
   /**
    * Handle respond to invitation.
    *
+   * Each attempt first reads the event from the server. The copy in the
+   * modal can be stale: the organizer may have cancelled or deleted the
+   * event, or removed the user, since the grid loaded. Writing that copy
+   * back would restore the event. When the server copy shows that the
+   * user cannot answer, no write happens and a toast tells why.
+   *
    * For non-recurring events (or option === "all" / undefined) the change is
    * applied to the master VEVENT via respondToMeeting — SabreDAV detects the
    * PARTSTAT change and emits the iTIP REPLY.
@@ -691,9 +698,9 @@ export const useSchedulerHandlers = ({
    * PARTSTAT changed. SabreDAV likewise emits a REPLY scoped to that
    * RECURRENCE-ID.
    *
-   * On a 412 Precondition Failed (the local ETag was stale because the
-   * organizer updated the event meanwhile) we refetch and retry once. A
-   * second conflict bubbles up as a user-facing error.
+   * On a 412 Precondition Failed (the event changed between the read and
+   * the write) we retry once. A second conflict bubbles up as a
+   * user-facing error.
    */
   const handleRespondToInvitation = useCallback(
     async (
@@ -728,102 +735,80 @@ export const useSchedulerHandlers = ({
         return new Date(event.start.date as unknown as string);
       })();
 
-      const withUpdatedPartstat = (e: IcsEvent): IcsEvent => ({
-        ...e,
-        attendees: e.attendees?.map((att) =>
-          att.email.toLowerCase() === userEmail.toLowerCase() ? { ...att, partstat: status } : att,
-        ),
-      });
-
-      // When the modal opened a specific occurrence of a recurring event,
-      // `event` has the occurrence's start/end and a recurrenceId. Routing
-      // that through respondToMeeting → updateEvent would either replace
-      // the entire ICS with the occurrence (when no override matches the
-      // recurrenceId — the cache lookup falls into the "replace events
-      // array" branch) or shift the master DTSTART. So for "all" on a
-      // recurring series we fetch the canonical master VEVENT upfront and
-      // change only its attendee's PARTSTAT. The fresh etag from that
-      // fetch is also what we PUT with — the modal's etag may be stale
-      // and would force a guaranteed 412.
-      const isRecurringAll = option !== "this" && !!(event.recurrenceId || event.recurrenceRule);
-      let masterEvent: IcsEvent = event;
-      let initialEtag: string | undefined = modalState.etag;
-      if (isRecurringAll) {
+      const attempt = async (): Promise<RsvpBlocker | CalDavResponse<unknown>> => {
         const fetched = await caldavService.fetchEvent(eventUrl);
         if (!fetched.success || !fetched.data) {
-          addErrorToast(t("rsvp.failed"));
+          if (fetched.status === 404) return "deleted";
           throw new Error(fetched.error ?? "Failed to fetch event");
         }
-        const master = fetched.data.data.events?.find(
-          (e) => e.uid === event.uid && !e.recurrenceId,
-        );
-        if (!master) {
-          addErrorToast(t("rsvp.failed"));
-          throw new Error("Master event not found");
-        }
-        masterEvent = master;
-        initialEtag = fetched.data.etag;
-      }
+        const events = fetched.data.data.events;
+        const etag = fetched.data.etag;
 
-      const attempt = async (currentEtag: string | undefined) => {
         if (option === "this") {
           if (!occurrenceDate) {
             return { success: false as const, error: "No occurrence date" };
           }
+          const blocker = findRsvpBlocker(events, event.uid, userEmail, occurrenceDate);
+          if (blocker) return blocker;
           // Strip RRULE on the override; createOverrideInstance also clears it
           // defensively, but be explicit so the ICS we pass in is well-formed.
           const overrideEvent: IcsEvent = {
-            ...withUpdatedPartstat(event),
+            ...event,
+            attendees: event.attendees?.map((att) =>
+              att.email.toLowerCase() === userEmail.toLowerCase()
+                ? { ...att, partstat: status }
+                : att,
+            ),
             recurrenceRule: undefined,
           };
           return caldavService.createOverrideInstance(
             eventUrl,
             overrideEvent,
             occurrenceDate,
-            currentEtag,
+            etag,
           );
         }
-        return caldavService.respondToMeeting(
-          eventUrl,
-          masterEvent,
-          userEmail,
-          status,
-          currentEtag,
-        );
+
+        const blocker = findRsvpBlocker(events, event.uid, userEmail);
+        if (blocker) return blocker;
+        // Answer on the server copy of the master VEVENT. The modal event
+        // can be one occurrence, or hold stale data.
+        const master = events?.find((e) => e.uid === event.uid && !e.recurrenceId);
+        if (!master) {
+          return { success: false as const, error: "Master event not found" };
+        }
+        return caldavService.respondToMeeting(eventUrl, master, userEmail, status, etag);
       };
 
+      let outcome: RsvpBlocker | CalDavResponse<unknown>;
       try {
-        let result = await attempt(initialEtag);
-
-        if (!result.success && result.status === 412) {
-          const refresh = await caldavService.fetchEvent(eventUrl);
-          if (refresh.success && refresh.data) {
-            if (isRecurringAll) {
-              const newMaster = refresh.data.data.events?.find(
-                (e) => e.uid === event.uid && !e.recurrenceId,
-              );
-              if (newMaster) masterEvent = newMaster;
-            }
-            result = await attempt(refresh.data.etag);
-          }
-        }
-
-        if (!result.success) {
-          throw new Error(result.error || "Failed to respond to invitation");
-        }
-
-        addSuccessToast(t("rsvp.responseSent"));
-
-        if (calendarRef.current) {
-          calendarRef.current.refetchEvents();
+        outcome = await attempt();
+        if (typeof outcome !== "string" && !outcome.success && outcome.status === 412) {
+          outcome = await attempt();
         }
       } catch (error) {
         addErrorToast(t("rsvp.failed"));
         console.error("Error responding to invitation:", error);
         throw error;
       }
+
+      if (typeof outcome === "string") {
+        addErrorToast(t(RSVP_BLOCKER_MESSAGE_KEYS[outcome]));
+        calendarRef.current?.refetchEvents();
+        throw new Error(`Cannot respond to invitation: ${outcome}`);
+      }
+
+      if (!outcome.success) {
+        addErrorToast(t("rsvp.failed"));
+        const error = new Error(outcome.error || "Failed to respond to invitation");
+        console.error("Error responding to invitation:", error);
+        throw error;
+      }
+
+      addSuccessToast(t("rsvp.responseSent"));
+      calendarRef.current?.refetchEvents();
     },
-    [caldavService, user, calendarRef, modalState.event, modalState.eventUrl, modalState.etag, t],
+    [caldavService, user, calendarRef, modalState.event, modalState.eventUrl, t],
   );
 
   /**
