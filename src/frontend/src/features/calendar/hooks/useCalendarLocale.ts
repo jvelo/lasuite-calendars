@@ -49,16 +49,18 @@ const FIRST_DAY_OF_WEEK: Record<string, 0 | 1 | 2 | 3 | 4 | 5 | 6> = {
 export function useCalendarLocale() {
   const { i18n, t } = useTranslation();
   const currentLanguage = i18n.language;
+  // Regional codes such as "fr-BE" use the locale of their base language.
+  const baseLanguage = currentLanguage.split("-")[0].toLowerCase();
 
   // Get date-fns locale
   const dateFnsLocale = useMemo(() => {
-    return DATE_FNS_LOCALES[currentLanguage] || DATE_FNS_LOCALES["en"] || enUS;
-  }, [currentLanguage]);
+    return DATE_FNS_LOCALES[currentLanguage] || DATE_FNS_LOCALES[baseLanguage] || enUS;
+  }, [currentLanguage, baseLanguage]);
 
   // Get Intl locale string (e.g., 'fr-FR')
   const intlLocale = useMemo(() => {
-    return INTL_LOCALES[currentLanguage] || INTL_LOCALES["en"] || "en-US";
-  }, [currentLanguage]);
+    return INTL_LOCALES[currentLanguage] || INTL_LOCALES[baseLanguage] || "en-US";
+  }, [currentLanguage, baseLanguage]);
 
   // Get calendar library locale code
   const calendarLocale = useMemo(() => {
@@ -68,8 +70,8 @@ export function useCalendarLocale() {
 
   // Get first day of week for this locale
   const firstDayOfWeek = useMemo(() => {
-    return FIRST_DAY_OF_WEEK[currentLanguage] ?? FIRST_DAY_OF_WEEK["en"] ?? 0;
-  }, [currentLanguage]);
+    return FIRST_DAY_OF_WEEK[currentLanguage] ?? FIRST_DAY_OF_WEEK[baseLanguage] ?? 0;
+  }, [currentLanguage, baseLanguage]);
 
   // Format date using Intl.DateTimeFormat with current locale
   const formatDate = useCallback(
