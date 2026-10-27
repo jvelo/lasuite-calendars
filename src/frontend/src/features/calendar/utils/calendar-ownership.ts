@@ -20,6 +20,15 @@ export type CalendarDeleteMode = "delete" | "delete-shared" | "remove";
 export const isCalendarOwner = (calendar: CalDavCalendar): boolean =>
   !(calendar.resourcetype ?? []).includes("shared");
 
+/**
+ * Tell if the calendar is one of the user's own calendars.
+ *
+ * A mailbox calendar is a sharee instance. The user acts for the
+ * mailbox, so a mailbox calendar counts as one of their own calendars.
+ */
+export const isOwnedCalendar = (calendar: CalDavCalendar): boolean =>
+  calendar.ownerType === "MAILBOX" || isCalendarOwner(calendar);
+
 export const getCalendarDeleteMode = (calendar: CalDavCalendar): CalendarDeleteMode => {
   if (!isCalendarOwner(calendar)) {
     return "remove";
