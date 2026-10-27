@@ -266,7 +266,8 @@
           "moveUp": "Move up",
           "moveDown": "Move down",
           "options": "Options",
-          "managedByMessages": "Access managed in Messages"
+          "managedByMessages": "Access managed in Messages",
+          "removeFromList": "Remove from my list"
         },
         "importEvents": {
           "title": "Import events",
@@ -392,7 +393,14 @@
           "title": "Delete calendar",
           "message": "Are you sure you want to delete the calendar \"{{name}}\"? This action cannot be undone.",
           "confirm": "Delete",
+          "sharedWarning": "This calendar is shared. It will be deleted for every person it is shared with.",
           "error": "The calendar could not be deleted."
+        },
+        "removeCalendar": {
+          "title": "Remove from my list",
+          "message": "Remove \"{{name}}\" from your list? You lose access to this calendar. The calendar and the access of other people do not change.",
+          "confirm": "Remove",
+          "error": "The calendar could not be removed from your list."
         },
         "shareCalendar": {
           "title": "Share calendar",
@@ -1226,7 +1234,8 @@
           "moveUp": "Déplacer vers le haut",
           "moveDown": "Déplacer vers le bas",
           "options": "Options",
-          "managedByMessages": "Accès géré dans Messages"
+          "managedByMessages": "Accès géré dans Messages",
+          "removeFromList": "Retirer de ma liste"
         },
         "importEvents": {
           "title": "Importer des événements",
@@ -1352,7 +1361,14 @@
           "title": "Supprimer le calendrier",
           "message": "Êtes-vous sûr de vouloir supprimer le calendrier \"{{name}}\" ? Cette action est irréversible.",
           "confirm": "Supprimer",
+          "sharedWarning": "Ce calendrier est partagé. Il sera supprimé pour toutes les personnes avec qui il est partagé.",
           "error": "Impossible de supprimer le calendrier."
+        },
+        "removeCalendar": {
+          "title": "Retirer de ma liste",
+          "message": "Retirer \"{{name}}\" de votre liste ? Vous perdez l'accès à ce calendrier. Le calendrier et l'accès des autres personnes ne changent pas.",
+          "confirm": "Retirer",
+          "error": "Impossible de retirer le calendrier de votre liste."
         },
         "shareCalendar": {
           "title": "Partager le calendrier",
@@ -1933,7 +1949,8 @@
           "moveUp": "Omhoog verplaatsen",
           "moveDown": "Omlaag verplaatsen",
           "options": "Opties",
-          "managedByMessages": "Toegang beheerd in Messages"
+          "managedByMessages": "Toegang beheerd in Messages",
+          "removeFromList": "Verwijderen uit mijn lijst"
         },
         "importEvents": {
           "title": "Evenementen importeren",
@@ -2059,7 +2076,14 @@
           "title": "Kalender verwijderen",
           "message": "Weet u zeker dat u de kalender \"{{name}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
           "confirm": "Verwijderen",
+          "sharedWarning": "Deze kalender is gedeeld. Hij wordt verwijderd voor iedereen met wie hij is gedeeld.",
           "error": "De kalender kon niet worden verwijderd."
+        },
+        "removeCalendar": {
+          "title": "Verwijderen uit mijn lijst",
+          "message": "\"{{name}}\" uit uw lijst verwijderen? U verliest de toegang tot deze kalender. De kalender en de toegang van andere personen veranderen niet.",
+          "confirm": "Verwijderen",
+          "error": "De kalender kon niet uit uw lijst worden verwijderd."
         },
         "shareCalendar": {
           "title": "Kalender delen",

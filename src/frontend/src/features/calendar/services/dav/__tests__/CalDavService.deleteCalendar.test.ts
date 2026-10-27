@@ -1,12 +1,15 @@
 /**
  * CalDavService calendar deletion.
  *
- * Messages manages some mailbox calendar instances, and SabreDAV
- * refuses to delete them. The client must read this flag from the
- * PROPFIND, and must report a refused DELETE as a failure.
+ * The owner and a sharee send the same DELETE. SabreDAV decides what
+ * it removes. Messages manages some mailbox calendar instances, and
+ * SabreDAV refuses to delete them. The client must read ownership and
+ * this flag from the PROPFIND, and must report a refused DELETE as a
+ * failure.
  */
 import type { Mock } from "vitest";
 import { CalDavService } from "../CalDavService";
+import { getCalendarDeleteMode } from "../../../utils/calendar-ownership";
 
 const HOME = "http://srv/caldav/calendars/users/me@example.com/";
 
@@ -19,13 +22,13 @@ function mockResponse(status: number, body = "", contentType = "application/xml"
   } as unknown as Response;
 }
 
-const calendarResponse = (uri: string, extraProps = "") => `
+const calendarResponse = (uri: string, extraProps = "", sharingType = "") => `
   <d:response>
     <d:href>/caldav/calendars/users/me@example.com/${uri}/</d:href>
     <d:propstat>
       <d:prop>
         <d:displayname>${uri}</d:displayname>
-        <d:resourcetype><d:collection/><cal:calendar/></d:resourcetype>
+        <d:resourcetype><d:collection/><cal:calendar/>${sharingType}</d:resourcetype>
         ${extraProps}
       </d:prop>
       <d:status>HTTP/1.1 200 OK</d:status>
@@ -43,6 +46,24 @@ const MULTISTATUS = `<?xml version="1.0"?>
     `${MAILBOX}<ls:calendar-sync-managed>true</ls:calendar-sync-managed>`,
   )}
   ${calendarResponse("team-manual", MAILBOX)}
+</d:multistatus>`;
+
+const SHAREE_INVITE = `
+  <cs:invite>
+    <cs:organizer><d:href>/caldav/principals/users/me@example.com</d:href></cs:organizer>
+    <cs:user>
+      <cs:invite-accepted/>
+      <cs:access><cs:read/></cs:access>
+      <d:href>mailto:bob@example.com</d:href>
+    </cs:user>
+  </cs:invite>`;
+
+const SHARING_MULTISTATUS = `<?xml version="1.0"?>
+<d:multistatus xmlns:d="DAV:" xmlns:cal="urn:ietf:params:xml:ns:caldav"
+  xmlns:cs="http://calendarserver.org/ns/">
+  ${calendarResponse("private", "", "<cs:shared-owner/>")}
+  ${calendarResponse("team", SHAREE_INVITE, "<cs:shared-owner/>")}
+  ${calendarResponse("from-alice", SHAREE_INVITE, "<cs:shared/>")}
 </d:multistatus>`;
 
 describe("CalDavService calendar deletion", () => {
@@ -74,6 +95,22 @@ describe("CalDavService calendar deletion", () => {
       private: false,
       "team-synced": true,
       "team-manual": false,
+    });
+  });
+
+  it("reads the delete mode of each calendar from the PROPFIND", async () => {
+    fetchMock.mockResolvedValueOnce(mockResponse(207, SHARING_MULTISTATUS));
+
+    const result = await service.fetchCalendars();
+
+    expect(result.success).toBe(true);
+    const modes = Object.fromEntries(
+      (result.data ?? []).map((cal) => [cal.displayName, getCalendarDeleteMode(cal)]),
+    );
+    expect(modes).toEqual({
+      private: "delete",
+      team: "delete-shared",
+      "from-alice": "remove",
     });
   });
 

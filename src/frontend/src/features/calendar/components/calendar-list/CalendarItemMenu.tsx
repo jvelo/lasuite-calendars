@@ -1,6 +1,6 @@
 /**
  * CalendarItemMenu component.
- * Context menu for calendar item actions (edit, delete, subscription).
+ * Context menu for calendar item actions (edit, delete or remove, subscription).
  */
 
 import { useMemo } from "react";
@@ -29,6 +29,7 @@ export const CalendarItemMenu = ({
   onOpenChange,
   onEdit,
   onDelete,
+  onRemove,
   isManagedByMessages,
   onShare,
   onImport,
@@ -87,10 +88,13 @@ export const CalendarItemMenu = ({
       });
     }
 
+    const destructiveAction = onRemove
+      ? { label: t("calendar.list.removeFromList"), callback: onRemove }
+      : { label: t("calendar.list.delete"), callback: onDelete };
     items.push({
-      label: t("calendar.list.delete"),
+      label: destructiveAction.label,
       icon: <Trash />,
-      callback: isManagedByMessages ? undefined : onDelete,
+      callback: isManagedByMessages ? undefined : destructiveAction.callback,
       isDisabled: isManagedByMessages,
       subText: isManagedByMessages ? t("calendar.list.managedByMessages") : undefined,
     });
@@ -100,6 +104,7 @@ export const CalendarItemMenu = ({
     t,
     onEdit,
     onDelete,
+    onRemove,
     isManagedByMessages,
     onShare,
     onImport,
