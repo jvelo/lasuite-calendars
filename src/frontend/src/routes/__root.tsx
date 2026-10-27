@@ -14,7 +14,7 @@ import { AnalyticsProvider } from "@/features/analytics/AnalyticsProvider";
 import { ConfigProvider } from "@/features/config/ConfigProvider";
 import { LeftPanelProvider } from "@/features/layouts/contexts/LeftPanelContext";
 import { APIError, errorToString } from "@/features/api/APIError";
-import { capitalizeRegion } from "@/features/i18n/utils";
+import { toCunninghamLocale } from "@/features/i18n/utils";
 import { removeQuotes, useCunninghamTheme } from "@/features/ui/cunningham/useCunninghamTheme";
 import { FeedbackFooterMobile } from "@/features/feedback/Feedback";
 import { useDynamicFavicon } from "@/features/ui/hooks/useDynamicFavicon";
@@ -84,7 +84,7 @@ const RootShell = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <CunninghamProvider currentLocale={capitalizeRegion(i18n.language)} theme={theme}>
+      <CunninghamProvider currentLocale={toCunninghamLocale(i18n.language)} theme={theme}>
         <ConfigProvider>
           <AnalyticsProvider>
             <LeftPanelProvider>
