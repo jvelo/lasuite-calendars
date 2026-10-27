@@ -1,4 +1,4 @@
-import { getCalendarDeleteMode, isCalendarOwner } from "../calendar-ownership";
+import { getCalendarDeleteMode, isCalendarOwner, isOwnedCalendar } from "../calendar-ownership";
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
 
 const calendar = (overrides: Partial<CalDavCalendar>): CalDavCalendar => ({
@@ -63,5 +63,35 @@ describe("getCalendarDeleteMode", () => {
     expect(
       getCalendarDeleteMode(calendar({ resourcetype: ["calendar", "shared"], sharees: [sharee] })),
     ).toBe("remove");
+  });
+});
+
+describe("isOwnedCalendar", () => {
+  it("returns true for a calendar the user created", () => {
+    expect(isOwnedCalendar(calendar({ resourcetype: ["collection", "calendar"] }))).toBe(true);
+  });
+
+  it("returns true for an owned calendar that the user shares", () => {
+    expect(
+      isOwnedCalendar(calendar({ resourcetype: ["collection", "calendar", "sharedOwner"] })),
+    ).toBe(true);
+  });
+
+  it("returns false for a calendar shared with the user", () => {
+    expect(isOwnedCalendar(calendar({ resourcetype: ["collection", "calendar", "shared"] }))).toBe(
+      false,
+    );
+  });
+
+  it("returns true for a mailbox calendar", () => {
+    expect(
+      isOwnedCalendar(
+        calendar({ resourcetype: ["collection", "calendar", "shared"], ownerType: "MAILBOX" }),
+      ),
+    ).toBe(true);
+  });
+
+  it("returns true when the resource type is unknown", () => {
+    expect(isOwnedCalendar(calendar({}))).toBe(true);
   });
 });
