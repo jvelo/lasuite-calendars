@@ -12,6 +12,7 @@ import { useMailboxContext } from "@/features/mailbox/MailboxContext";
 import { addToast, ToasterItem } from "../../../ui/components/toaster/Toaster";
 import { fetchAPI } from "@/features/api/fetchApi";
 import { Info } from "@gouvfr-lasuite/ui-components/icons";
+import { getShareErrorKey } from "./utils";
 
 import type {
   CalDavCalendar,
@@ -81,6 +82,7 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
   }, [mailboxData]);
 
   const isMailboxAdmin = mailboxData?.role === "admin";
+  const ownerEmail = isMailbox ? mailboxEmail : user?.email;
 
   // Seed/reset the share list when the modal opens or the calendar
   // changes. The initial sharees come from ``calendar.sharees`` —
@@ -202,6 +204,13 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
       setLoading(true);
       try {
         const invitedUser = users[0];
+        // The server fails with an unclear error when the sharee is the owner.
+        if (invitedUser.email.toLowerCase() === ownerEmail?.toLowerCase()) {
+          addToast(
+            <ToasterItem type="error">{t("calendar.shareCalendar.errorOwner")}</ToasterItem>,
+          );
+          return;
+        }
         const privilege = (
           SHARE_ROLES.includes(role as SharePrivilege) ? role : "read-write"
         ) as SharePrivilege;
@@ -218,7 +227,7 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
         } else {
           addToast(
             <ToasterItem type="error">
-              {result.error || t("calendar.shareCalendar.error")}
+              {t(getShareErrorKey(result, "calendar.shareCalendar.error"))}
             </ToasterItem>,
           );
         }
@@ -229,7 +238,7 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
         setSearchResults([]);
       }
     },
-    [calendar, shareCalendar, refreshSharees, t],
+    [calendar, ownerEmail, shareCalendar, refreshSharees, t],
   );
 
   const handleUpdateAccess = useCallback(
@@ -262,7 +271,7 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
         } else {
           addToast(
             <ToasterItem type="error">
-              {result.error || t("calendar.shareCalendar.error")}
+              {t(getShareErrorKey(result, "calendar.shareCalendar.error"))}
             </ToasterItem>,
           );
         }
@@ -297,12 +306,12 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
         } else {
           addToast(
             <ToasterItem type="error">
-              {result.error || t("calendar.shareCalendar.error")}
+              {t(getShareErrorKey(result, "calendar.shareCalendar.errorRemove"))}
             </ToasterItem>,
           );
         }
       } catch {
-        addToast(<ToasterItem type="error">{t("calendar.shareCalendar.error")}</ToasterItem>);
+        addToast(<ToasterItem type="error">{t("calendar.shareCalendar.errorRemove")}</ToasterItem>);
       } finally {
         setLoading(false);
       }
