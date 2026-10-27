@@ -234,8 +234,6 @@ class Base(Configuration):
         None, environ_name="MEDIA_BASE_URL", environ_prefix=None
     )
 
-    SITE_ID = 1
-
     STORAGES = {
         "default": {
             "BACKEND": "django.core.files.storage.FileSystemStorage",
@@ -334,17 +332,13 @@ class Base(Configuration):
         # Third party apps
         "corsheaders",
         "django_dramatiq",
-        "django_filters",
         "rest_framework",
-        "rest_framework_api_key",
-        "parler",
         # Django
         "django.contrib.admin",
         "django.contrib.auth",
         "django.contrib.contenttypes",
         "django.contrib.postgres",
         "django.contrib.sessions",
-        "django.contrib.sites",
         "django.contrib.messages",
         "django.contrib.staticfiles",
         # OIDC third party
@@ -895,20 +889,6 @@ class Base(Configuration):
         Delegate to the module function to enable easier testing.
         """
         return get_release()
-
-    # pylint: disable=invalid-name
-    @property
-    def PARLER_LANGUAGES(self):
-        """
-        Return languages for Parler computed from the LANGUAGES and LANGUAGE_CODE settings.
-        """
-        return {
-            self.SITE_ID: tuple({"code": code} for code, _name in self.LANGUAGES),
-            "default": {
-                "fallbacks": [self.LANGUAGE_CODE],
-                "hide_untranslated": False,
-            },
-        }
 
     @classmethod
     def post_setup(cls):
