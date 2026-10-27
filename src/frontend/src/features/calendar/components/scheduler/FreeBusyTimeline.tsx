@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { createCalendar, destroyCalendar, ResourceTimeline } from "@event-calendar/core";
 import { ChevronLeft, ChevronRight, Retry } from "@gouvfr-lasuite/ui-components/icons";
 
+import { useCalendarLocale } from "../../hooks/useCalendarLocale";
 import type { FreeBusyResponse } from "../../services/dav/types/caldav-service";
 
 interface FreeBusyTimelineProps {
@@ -34,6 +35,7 @@ export const FreeBusyTimeline = ({
   onTimeSelect,
 }: FreeBusyTimelineProps) => {
   const { t } = useTranslation();
+  const { calendarLocale, intlLocale } = useCalendarLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<ReturnType<typeof createCalendar> | null>(null);
   const handlersRef = useRef({ onTimeSelect, onDateChange });
@@ -48,7 +50,7 @@ export const FreeBusyTimeline = ({
     eventDurationRef.current = eventDurationMs;
   }, [eventDurationMs]);
 
-  const dateStr = date.toLocaleDateString(undefined, {
+  const dateStr = date.toLocaleDateString(intlLocale, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -112,6 +114,7 @@ export const FreeBusyTimeline = ({
       slotMaxTime: "24:00",
       slotDuration: "01:00",
       height: "auto",
+      locale: calendarLocale,
       date,
       resources,
       events,
@@ -201,7 +204,7 @@ export const FreeBusyTimeline = ({
       }
     };
     // Recreate when data changes
-  }, [date, resources, events, eventStart, eventEnd]);
+  }, [date, resources, events, eventStart, eventEnd, calendarLocale]);
 
   const handlePrev = useCallback(() => {
     const prev = new Date(date);

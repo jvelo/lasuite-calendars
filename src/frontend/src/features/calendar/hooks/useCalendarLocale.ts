@@ -3,73 +3,33 @@
  *
  * Provides locale-aware utilities for date formatting and calendar configuration
  */
-import { useCallback, useMemo } from "react";
+import { useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { enUS, fr, nl, Locale } from "date-fns/locale";
 
-// Map i18n language codes to date-fns locales
-const DATE_FNS_LOCALES: Record<string, Locale> = {
-  en: enUS,
-  "en-us": enUS,
-  "en-US": enUS,
-  fr: fr,
-  "fr-fr": fr,
-  "fr-FR": fr,
-  nl: nl,
-  "nl-nl": nl,
-  "nl-NL": nl,
+type LocaleSettings = {
+  dateFns: Locale;
+  intl: string;
+  // 0 = Sunday, 1 = Monday
+  firstDayOfWeek: 0 | 1 | 2 | 3 | 4 | 5 | 6;
 };
 
-// Map i18n language codes to Intl locale codes
-const INTL_LOCALES: Record<string, string> = {
-  en: "en-US",
-  "en-us": "en-US",
-  "en-US": "en-US",
-  fr: "fr-FR",
-  "fr-fr": "fr-FR",
-  "fr-FR": "fr-FR",
-  nl: "nl-NL",
-  "nl-nl": "nl-NL",
-  "nl-NL": "nl-NL",
-};
-
-// First day of week by locale (0 = Sunday, 1 = Monday)
-const FIRST_DAY_OF_WEEK: Record<string, 0 | 1 | 2 | 3 | 4 | 5 | 6> = {
-  en: 0, // US: Sunday
-  "en-us": 0,
-  "en-US": 0,
-  fr: 1, // France: Monday
-  "fr-fr": 1,
-  "fr-FR": 1,
-  nl: 1, // Netherlands: Monday
-  "nl-nl": 1,
-  "nl-NL": 1,
+// Keyed by base language. Regional codes such as "fr-BE" use their base language.
+const LOCALES: Record<string, LocaleSettings> = {
+  en: { dateFns: enUS, intl: "en-US", firstDayOfWeek: 0 },
+  fr: { dateFns: fr, intl: "fr-FR", firstDayOfWeek: 1 },
+  nl: { dateFns: nl, intl: "nl-NL", firstDayOfWeek: 1 },
 };
 
 export function useCalendarLocale() {
   const { i18n, t } = useTranslation();
   const currentLanguage = i18n.language;
-
-  // Get date-fns locale
-  const dateFnsLocale = useMemo(() => {
-    return DATE_FNS_LOCALES[currentLanguage] || DATE_FNS_LOCALES["en"] || enUS;
-  }, [currentLanguage]);
-
-  // Get Intl locale string (e.g., 'fr-FR')
-  const intlLocale = useMemo(() => {
-    return INTL_LOCALES[currentLanguage] || INTL_LOCALES["en"] || "en-US";
-  }, [currentLanguage]);
-
-  // Get calendar library locale code
-  const calendarLocale = useMemo(() => {
-    const base = currentLanguage.split("-")[0];
-    return base || "en";
-  }, [currentLanguage]);
-
-  // Get first day of week for this locale
-  const firstDayOfWeek = useMemo(() => {
-    return FIRST_DAY_OF_WEEK[currentLanguage] ?? FIRST_DAY_OF_WEEK["en"] ?? 0;
-  }, [currentLanguage]);
+  const settings = LOCALES[currentLanguage.split("-")[0].toLowerCase()] ?? LOCALES.en;
+  const dateFnsLocale = settings.dateFns;
+  const intlLocale = settings.intl;
+  const firstDayOfWeek = settings.firstDayOfWeek;
+  // Calendar library locale code
+  const calendarLocale = currentLanguage.split("-")[0] || "en";
 
   // Format date using Intl.DateTimeFormat with current locale
   const formatDate = useCallback(

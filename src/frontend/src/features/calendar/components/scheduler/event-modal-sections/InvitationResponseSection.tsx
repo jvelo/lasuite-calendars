@@ -98,7 +98,7 @@ export const InvitationResponseSection = ({
             >
               {partstatIcon}
               <span>
-                {t("calendar.event.yourResponse")}:{" "}
+                {t("calendar.event.yourResponse")}{" "}
                 <strong>{t(statusLabelKey(currentStatus))}</strong>
               </span>
             </div>
