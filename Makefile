@@ -289,11 +289,6 @@ reset-db: build ## flush database and re-run migrations
 	@$(MAKE) migrate-caldav
 .PHONY: reset-db
 
-demo: ## flush db then create a demo
-	@$(MAKE) reset-db
-	@$(MANAGE) create_demo
-.PHONY: demo
-
 # -- Frontend
 
 build-front-distroless: ## build the frontend distroless production image (Caddy + static bundle)
