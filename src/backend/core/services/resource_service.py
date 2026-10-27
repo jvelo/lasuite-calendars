@@ -10,8 +10,25 @@ from core.services.caldav_service import CalDAVHTTPClient
 logger = logging.getLogger(__name__)
 
 
+# Error codes of ``ResourceProvisioningError``.
+INVALID_RESOURCE_TYPE = "invalid_resource_type"
+INVALID_RESOURCE_ID = "invalid_resource_id"
+RESOURCE_ALREADY_EXISTS = "resource_already_exists"
+RESOURCE_NOT_FOUND = "resource_not_found"
+RESOURCE_OTHER_ORGANIZATION = "resource_access_denied"
+RESOURCE_SERVICE_FAILED = "resource_service_failed"
+
+
 class ResourceProvisioningError(Exception):
-    """Raised when resource provisioning fails."""
+    """Raised when resource provisioning fails.
+
+    ``code`` is a stable identifier. The message is for the logs only:
+    it can hold internal details.
+    """
+
+    def __init__(self, message, code):
+        super().__init__(message)
+        self.code = code
 
 
 class ResourceService:
@@ -48,12 +65,14 @@ class ResourceService:
         """
         if resource_type not in ("ROOM", "RESOURCE"):
             raise ResourceProvisioningError(
-                "resource_type must be 'ROOM' or 'RESOURCE'."
+                "resource_type must be 'ROOM' or 'RESOURCE'.",
+                code=INVALID_RESOURCE_TYPE,
             )
 
         if not settings.CALDAV_INTERNAL_API_KEY:
             raise ResourceProvisioningError(
-                "CALDAV_INTERNAL_API_KEY is not configured."
+                "CALDAV_INTERNAL_API_KEY is not configured.",
+                code=RESOURCE_SERVICE_FAILED,
             )
 
         resource_id = str(uuid4())
@@ -76,11 +95,15 @@ class ResourceService:
         except Exception as e:
             logger.error("Failed to create resource principal: %s", e)
             raise ResourceProvisioningError(
-                "Failed to create resource principal."
+                "Failed to create resource principal.",
+                code=RESOURCE_SERVICE_FAILED,
             ) from e
 
         if response.status_code == 409:
-            raise ResourceProvisioningError(f"Resource '{resource_id}' already exists.")
+            raise ResourceProvisioningError(
+                f"Resource '{resource_id}' already exists.",
+                code=RESOURCE_ALREADY_EXISTS,
+            )
 
         if response.status_code != 201:
             logger.error(
@@ -88,7 +111,9 @@ class ResourceService:
                 response.status_code,
                 response.text[:500],
             )
-            raise ResourceProvisioningError("Failed to create resource principal.")
+            raise ResourceProvisioningError(
+                "Failed to create resource principal.", code=RESOURCE_SERVICE_FAILED
+            )
 
         principal_uri = f"principals/resources/{resource_id}"
         calendar_uri = f"calendars/resources/{resource_id}/default/"
@@ -113,7 +138,8 @@ class ResourceService:
             UUID(str(resource_id))
         except (ValueError, AttributeError) as e:
             raise ResourceProvisioningError(
-                "Invalid resource ID: must be a valid UUID."
+                "Invalid resource ID: must be a valid UUID.",
+                code=INVALID_RESOURCE_ID,
             ) from e
 
     def delete_resource(self, user, resource_id):
@@ -133,7 +159,8 @@ class ResourceService:
 
         if not settings.CALDAV_INTERNAL_API_KEY:
             raise ResourceProvisioningError(
-                "CALDAV_INTERNAL_API_KEY is not configured."
+                "CALDAV_INTERNAL_API_KEY is not configured.",
+                code=RESOURCE_SERVICE_FAILED,
             )
 
         try:
@@ -144,10 +171,14 @@ class ResourceService:
             )
         except Exception as e:
             logger.error("Failed to delete resource: %s", e)
-            raise ResourceProvisioningError("Failed to delete resource.") from e
+            raise ResourceProvisioningError(
+                "Failed to delete resource.", code=RESOURCE_SERVICE_FAILED
+            ) from e
 
         if response.status_code == 404:
-            raise ResourceProvisioningError(f"Resource '{resource_id}' not found.")
+            raise ResourceProvisioningError(
+                f"Resource '{resource_id}' not found.", code=RESOURCE_NOT_FOUND
+            )
 
         if response.status_code == 403:
             try:
@@ -155,7 +186,8 @@ class ResourceService:
             except ValueError:
                 error_msg = ""
             raise ResourceProvisioningError(
-                error_msg or "Cannot delete a resource from a different organization."
+                error_msg or "Cannot delete a resource from a different organization.",
+                code=RESOURCE_OTHER_ORGANIZATION,
             )
 
         if response.status_code not in (200, 204):
@@ -164,4 +196,6 @@ class ResourceService:
                 response.status_code,
                 response.text[:500],
             )
-            raise ResourceProvisioningError("Failed to delete resource.")
+            raise ResourceProvisioningError(
+                "Failed to delete resource.", code=RESOURCE_SERVICE_FAILED
+            )

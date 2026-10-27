@@ -383,8 +383,10 @@ class ResourceViewSet(viewsets.ViewSet):
         try:
             result = service.create_resource(request.user, name, resource_type)
         except ResourceProvisioningError as e:
+            # The message can hold internal details, so return only the code.
+            logger.warning("Resource request failed (code=%s): %s", e.code, e)
             return response.Response(
-                {"detail": str(e)},
+                {"code": e.code, "detail": "Resource request failed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
@@ -406,8 +408,10 @@ class ResourceViewSet(viewsets.ViewSet):
         try:
             service.delete_resource(request.user, resource_id)
         except ResourceProvisioningError as e:
+            # The message can hold internal details, so return only the code.
+            logger.warning("Resource request failed (code=%s): %s", e.code, e)
             return response.Response(
-                {"detail": str(e)},
+                {"code": e.code, "detail": "Resource request failed."},
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
