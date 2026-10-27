@@ -23,6 +23,7 @@ export const useCreateResource = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: createResource,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: RESOURCES_QUERY_KEY });
@@ -34,6 +35,7 @@ export const useDeleteResource = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: deleteResource,
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: RESOURCES_QUERY_KEY });

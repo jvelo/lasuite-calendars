@@ -27,6 +27,7 @@ export const useWorkingHours = () => {
   });
 
   const mutation = useMutation({
+    meta: { noGlobalError: true },
     mutationFn: async (slots: AvailabilitySlots) => {
       const vcalendar = slotsToVCalendar(slots);
       const result = await caldavService.setAvailability(vcalendar);

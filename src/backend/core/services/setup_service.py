@@ -30,8 +30,20 @@ ROLE_TO_PRIVILEGE = {
 SEND_ROLES = {"sender", "admin"}
 
 
+# Error code: the user has no role on the mailbox that lets them send.
+MAILBOX_ROLE_REQUIRED = "mailbox_role_required"
+
+
 class SetupServiceError(Exception):
-    """Raised when a mailbox operation fails."""
+    """Raised when a mailbox operation fails.
+
+    ``code`` is a stable identifier that clients can translate.
+    It is ``None`` when the error has no specific code.
+    """
+
+    def __init__(self, message, code=None):
+        super().__init__(message)
+        self.code = code
 
 
 def _resolve_mailbox_org_id(mailbox_data):
@@ -176,7 +188,8 @@ class SetupService:
         if user_role not in SEND_ROLES:
             raise SetupServiceError(
                 f"User needs 'sender' or 'admin' role to create a mailbox calendar"
-                f" (current role: {user_role})"
+                f" (current role: {user_role})",
+                code=MAILBOX_ROLE_REQUIRED,
             )
 
         # Resolve org from the mailbox's mail domain custom attributes

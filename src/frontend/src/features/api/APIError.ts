@@ -1,7 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import i18n from "@/features/i18n/initI18n";
-import { AppError } from "../errors/AppError";
-
 export class APIError extends Error {
   data?: any;
   code: number;
@@ -13,41 +10,21 @@ export class APIError extends Error {
   }
 }
 
-export const errorToString = (error: unknown): string => {
-  if (typeof error === "string") {
-    return error;
-  }
+/** A request that did not reach the server. */
+export class NetworkError extends Error {}
 
+const STATUS_KEYS: Record<number, string> = {
+  403: "api.error.forbidden",
+  413: "api.error.fileTooLarge",
+};
+
+/** Returns the translation key of a user message for an error. */
+export const getErrorMessageKey = (error: unknown): string => {
+  if (error instanceof NetworkError) {
+    return "api.error.network";
+  }
   if (error instanceof APIError) {
-    const data = error.data;
-    // If there is a data, it means that the error is a JSON object
-    if (typeof data === "string") {
-      return data;
-    }
-
-    if (data?.errors && Array.isArray(data?.errors) && data?.errors?.length > 0) {
-      return data.errors[0].detail;
-    }
-
-    if (data) {
-      /**
-       * This is made to handle full text errors from the API like:
-       *
-       * "title": [
-       *   "The title field is required."
-       *  ]
-       */
-      return Object.entries(error.data)
-        .map(([, value]) => `${value}`)
-        .join("\n");
-    }
-    // If there is no data, it means that the error is a string, probably a complicated html error.
-    return i18n.t("api.error.unexpected");
+    return STATUS_KEYS[error.code] ?? "api.error.unexpected";
   }
-  // We want to show the error message from the AppError only. Not message from the Error class as they
-  // can be really technical and not helpful for the user. For those we show the generic error message.
-  if (error instanceof AppError) {
-    return error.message;
-  }
-  return i18n.t("api.error.unexpected");
+  return "api.error.unexpected";
 };

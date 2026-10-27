@@ -131,16 +131,15 @@ export const CalendarList = () => {
     }
   }, [calendarRef]);
 
-  const handleMoveUp = useCallback(
-    (calendar: CalDavCalendar) => {
-      // moveCalendar resolves with `{success: false, error}` when any
-      // PROPPATCH fails — surface that to the user instead of swallowing
-      // it (and instead of leaving the visible state quietly stale).
-      void moveCalendar(calendar.url, "up").then((result) => {
+  const handleMove = useCallback(
+    (calendar: CalDavCalendar, direction: "up" | "down") => {
+      // The error text is not translated, so log it and show a translated toast.
+      void moveCalendar(calendar.url, direction).then((result) => {
         if (!result.success) {
+          console.error("Failed to move calendar:", result.error);
           addToast(
             <ToasterItem type="error" closeButton>
-              {result.error || t("calendar.error.fetchCalendars")}
+              {t("calendar.error.reorderCalendars")}
             </ToasterItem>,
           );
         }
@@ -149,19 +148,14 @@ export const CalendarList = () => {
     [moveCalendar, t],
   );
 
+  const handleMoveUp = useCallback(
+    (calendar: CalDavCalendar) => handleMove(calendar, "up"),
+    [handleMove],
+  );
+
   const handleMoveDown = useCallback(
-    (calendar: CalDavCalendar) => {
-      void moveCalendar(calendar.url, "down").then((result) => {
-        if (!result.success) {
-          addToast(
-            <ToasterItem type="error" closeButton>
-              {result.error || t("calendar.error.fetchCalendars")}
-            </ToasterItem>,
-          );
-        }
-      });
-    },
-    [moveCalendar, t],
+    (calendar: CalDavCalendar) => handleMove(calendar, "down"),
+    [handleMove],
   );
 
   return (
