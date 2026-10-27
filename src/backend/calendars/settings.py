@@ -626,7 +626,7 @@ class Base(Configuration):
         default=True,
         environ_name="OIDC_CREATE_USER",
     )
-    OIDC_CALLBACK_CLASS = "core.authentication.views.OIDCAuthenticationCallbackView"
+    OIDC_CALLBACK_CLASS = "lasuite.oidc_login.views.OIDCAuthenticationCallbackView"
     OIDC_RP_SIGN_ALGO = values.Value(
         "RS256", environ_name="OIDC_RP_SIGN_ALGO", environ_prefix=None
     )
