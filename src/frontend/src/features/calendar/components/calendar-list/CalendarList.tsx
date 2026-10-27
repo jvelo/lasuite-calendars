@@ -1,6 +1,6 @@
 /**
  * CalendarList component - List of calendars with visibility toggles.
- * Shows onboarding modal when user has no calendars.
+ * Shows onboarding modal when user owns no calendar.
  */
 
 import { useState, useCallback } from "react";
@@ -16,7 +16,7 @@ import { SubscriptionUrlModal } from "./SubscriptionUrlModal";
 import { CalendarListItem } from "./CalendarListItem";
 import { useCalendarListState } from "./hooks/useCalendarListState";
 import { extractCaldavPath } from "./utils";
-import { getCalendarDeleteMode } from "../../utils/calendar-ownership";
+import { getCalendarDeleteMode, isOwnedCalendar } from "../../utils/calendar-ownership";
 import { Plus, ChevronDown } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
@@ -80,8 +80,9 @@ export const CalendarList = () => {
     onDeleteError: handleDeleteError,
   });
 
-  // Onboarding: show modal when user has no calendars at all
-  const showOnboarding = !isCalendarLoading && davCalendars.length === 0;
+  // Onboarding: show modal when user owns no calendar. Calendars that
+  // other users share with them do not count.
+  const showOnboarding = !isCalendarLoading && !davCalendars.some(isOwnedCalendar);
 
   // Wrap save to handle mailbox calendar creation
   const handleSaveWithMailbox = useCallback(
@@ -276,7 +277,7 @@ export const CalendarList = () => {
         )}
       </div>
 
-      {/* Onboarding modal: shown when user has no calendars */}
+      {/* Onboarding modal: shown when user owns no calendar */}
       <CalendarModal
         isOpen={showOnboarding}
         mode="create"
