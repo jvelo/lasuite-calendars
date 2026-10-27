@@ -73,10 +73,17 @@ Calendars checks two entitlements:
    calendar for a new user. Fail-closed: skips creation when
    entitlements are unavailable.
 4. **CalDAV proxy** (`core/api/viewsets_caldav.py`): Blocks
-   `MKCALENDAR` and `MKCOL` methods for non-entitled users.
-   Other methods (PROPFIND, REPORT, GET, PUT, DELETE) are allowed
+   `MKCALENDAR` and `MKCOL` methods, and `DELETE` and `MOVE` on a
+   calendar collection, for non-entitled users. Other methods
+   (PROPFIND, REPORT, GET, PUT, and `DELETE` of an event) are allowed
    so that users invited to shared calendars can still use them.
-   Fail-closed: denies creation when entitlements are unavailable.
+   Fail-closed: denies these methods when entitlements are unavailable.
+
+   Known limitation: a sharee leaves a shared calendar with a `DELETE`
+   on their own calendar instance. This is a collection `DELETE`, so a
+   non-entitled sharee cannot remove a shared calendar from their list.
+   The frontend sends non-entitled users to `/no-access`, so this
+   mainly affects external CalDAV clients.
 5. **Import events** (`core/api/viewsets.py`): Blocks
    `POST /calendars/import-events/` for non-entitled users.
    Fail-closed: denies import when entitlements are unavailable.
