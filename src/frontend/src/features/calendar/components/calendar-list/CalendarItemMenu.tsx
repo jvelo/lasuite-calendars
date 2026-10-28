@@ -30,7 +30,7 @@ export const CalendarItemMenu = ({
   onEdit,
   onDelete,
   onLeave,
-  isManagedByMessages,
+  syncManaged,
   onShare,
   onImport,
   onSubscription,
@@ -89,13 +89,11 @@ export const CalendarItemMenu = ({
     }
 
     items.push({
-      label: t(
-        onLeave && !isManagedByMessages ? "calendar.list.leaveCalendar" : "calendar.list.delete",
-      ),
+      label: t(onLeave && !syncManaged ? "calendar.list.leaveCalendar" : "calendar.list.delete"),
       icon: <Trash />,
       callback: onLeave ?? onDelete,
-      isDisabled: isManagedByMessages,
-      subText: isManagedByMessages ? t("calendar.list.managedByMessages") : undefined,
+      isDisabled: syncManaged,
+      subText: syncManaged ? t("calendar.list.managedByMessages") : undefined,
     });
 
     return items;
@@ -104,7 +102,7 @@ export const CalendarItemMenu = ({
     onEdit,
     onDelete,
     onLeave,
-    isManagedByMessages,
+    syncManaged,
     onShare,
     onImport,
     onSubscription,

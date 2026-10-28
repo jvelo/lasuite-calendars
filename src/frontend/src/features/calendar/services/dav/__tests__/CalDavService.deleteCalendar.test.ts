@@ -1,9 +1,6 @@
 /**
- * CalDavService calendar deletion.
- *
- * Messages manages some mailbox calendar instances, and SabreDAV
- * refuses to delete them. The client must read this flag from the
- * PROPFIND, and must report a refused DELETE as a failure.
+ * CalDavService calendar deletion. The client reads the sync-managed
+ * flag from the PROPFIND, and reports a refused DELETE as a failure.
  */
 import type { Mock } from "vitest";
 import { CalDavService } from "../CalDavService";

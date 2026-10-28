@@ -312,8 +312,8 @@ export function buildCalendarQueryXml(params: CalendarQueryParams = {}): string 
  * tokens — ``parseSharePrivilege`` needs the override map to round-trip
  * those levels correctly.
  *
- * ``LS:calendar-sync-managed`` marks a mailbox instance that Messages
- * manages. The user cannot delete it.
+ * ``LS:calendar-sync-managed`` marks a calendar instance that the
+ * mailbox ACL sync manages.
  */
 export const CALENDAR_PROPS = {
   [`${NS.CALDAV}:calendar-description`]: {},
