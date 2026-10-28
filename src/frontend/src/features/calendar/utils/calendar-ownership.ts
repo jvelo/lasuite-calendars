@@ -1,11 +1,12 @@
 import type { CalDavCalendar } from "../services/dav/types/caldav-service";
 
 /**
- * What a DELETE on the calendar does for the current user.
+ * The wording of the confirmation before a DELETE on the calendar.
+ * It does not tell if the server accepts the DELETE.
  *
- * - `delete`: the user owns the calendar. Nobody else has access.
- * - `delete-shared`: the user owns the calendar. Other users lose it too.
- * - `leave`: the user is a sharee. Only their own access goes away.
+ * - `delete`: an owner instance with no sharees in the fetched data.
+ * - `delete-shared`: an owner instance with sharees. They lose it too.
+ * - `leave`: a sharee instance. Only the user's own access goes away.
  */
 export type CalendarDeleteMode = "delete" | "delete-shared" | "leave";
 
@@ -16,6 +17,7 @@ export type CalendarDeleteMode = "delete" | "delete-shared" | "leave";
  * The owner instance has `CS:shared-owner` instead, which the DAV
  * parser turns into `sharedOwner`. The URL does not help: SabreDAV
  * puts each sharee instance in the sharee's own calendar home.
+ * Without resource type data, the user counts as the owner.
  */
 export const isCalendarOwner = (calendar: CalDavCalendar): boolean =>
   !(calendar.resourcetype ?? []).includes("shared");

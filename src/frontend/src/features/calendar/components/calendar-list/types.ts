@@ -28,9 +28,9 @@ export interface CalendarItemMenuProps {
   isOpen: boolean;
   onOpenChange: (isOpen: boolean) => void;
   onEdit: () => void;
-  /** Deletes the calendar for every user. Set it for the owner only. */
+  /** Asks to confirm the delete for every user. Set it for the owner only. */
   onDelete?: () => void;
-  /** Removes only the current user's access. Set it for a sharee only. */
+  /** Asks to confirm that the user leaves the calendar. Set it for a sharee only. */
   onLeave?: () => void;
   onShare?: () => void;
   onImport?: () => void;

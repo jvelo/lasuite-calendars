@@ -13,7 +13,7 @@ import { isCalendarOwner } from "@/features/calendar/utils/calendar-ownership";
 import type { CalendarListItemProps } from "./types";
 
 /**
- * CalendarListItem - Displays a user-owned calendar.
+ * CalendarListItem - Displays a calendar of the list, owned or shared.
  */
 export const CalendarListItem = ({
   calendar,
