@@ -693,24 +693,26 @@ export const useSchedulerHandlers = ({
   }, [setModalState]);
 
   /**
-   * Handle respond to invitation.
+   * Answer an invitation as the current user.
    *
-   * Each attempt reads the event from the server first. The modal copy can
-   * be stale, and writing it back can restore a cancelled event. If the
-   * server copy blocks the answer, the handler shows why and does not write.
+   * The modal copy can be stale: the organizer can change the event after
+   * the grid loads it. So each attempt works on the server copy:
    *
-   * For non-recurring events (or option === "all" / undefined) the change is
-   * applied to the master VEVENT via respondToMeeting — SabreDAV detects the
-   * PARTSTAT change and emits the iTIP REPLY.
+   * 1. Read the event from the server.
+   * 2. Check that the user can still answer (`findRsvpBlocker`). For one
+   *    occurrence, also check that it is still scheduled: an override
+   *    exists for it, or the server expansion of the RRULE contains it.
+   * 3. Change only the PARTSTAT of the user:
+   *    - "this": in the override of the occurrence. If no override exists,
+   *      build one from the master.
+   *    - "all", or a non-recurring event: in the master VEVENT.
+   * 4. Write with the ETag of the read. SabreDAV sends the iTIP REPLY to
+   *    the organizer.
    *
-   * For option === "this" we materialize a single-occurrence override (same
-   * UID + RECURRENCE-ID, no RRULE) with only the responding attendee's
-   * PARTSTAT changed. SabreDAV likewise emits a REPLY scoped to that
-   * RECURRENCE-ID.
-   *
-   * A 412 Precondition Failed means that the event changed between the
-   * read and the write. The handler then tries once more. A second 412
-   * shows an error to the user.
+   * If the check fails, the handler does not write. It shows the reason and
+   * reloads the grid. A 412 means that the event changed between the read
+   * and the write. The handler then tries once more. A second 412 shows an
+   * error.
    */
   const handleRespondToInvitation = useCallback(
     async (
@@ -783,7 +785,6 @@ export const useSchedulerHandlers = ({
             scheduled,
           });
           if (blocker) return blocker;
-          // Build the answer from the server copy. The modal copy can be stale.
           const overrideEvent = buildOccurrenceReply(events, event.uid, instant, userEmail, status);
           if (!overrideEvent) {
             return { success: false as const, error: "Occurrence not found" };
@@ -798,8 +799,6 @@ export const useSchedulerHandlers = ({
 
         const blocker = findRsvpBlocker(events, event.uid, userEmail);
         if (blocker) return blocker;
-        // Change the server copy of the master VEVENT. The modal copy can
-        // be one occurrence, or it can be stale.
         const master = events?.find((e) => e.uid === event.uid && !e.recurrenceId);
         if (!master) {
           return { success: false as const, error: "Master event not found" };
