@@ -160,4 +160,4 @@ While Calendars is a public driven initiative our licence choice is an invitatio
 
 ## Credits ❤️
 
-Calendars uses [Django REST Framework](https://www.django-rest-framework.org/), [React](https://react.dev/), [TanStack](https://tanstack.com/) and [SabreDAV](https://sabre.io/dav/). We thank the contributors of all these projects for their great work!
+Calendars is built on top of [Django REST Framework](https://www.django-rest-framework.org/), [React](https://react.dev/), [TanStack](https://tanstack.com/) and [SabreDAV](https://sabre.io/dav/). We thank the contributors of all these projects for their awesome work!
