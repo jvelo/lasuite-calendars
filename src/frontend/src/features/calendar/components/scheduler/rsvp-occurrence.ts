@@ -40,9 +40,9 @@ const toFakeUtc = (date: Date, timezone: string): Date => {
 /**
  * Tell if the server expansion still holds the occurrence at `occurrenceDate`.
  *
- * `expanded` holds real UTC dates. `occurrenceDate` is fake UTC, in the
- * series timezone. Without a TZID, the browser timezone applies. A date
- * also matches as is, for all-day series.
+ * `expanded` holds real UTC dates. For a timed series, `occurrenceDate` is
+ * fake UTC in the series timezone, or in the browser timezone without a
+ * TZID. For an all-day series, both hold midnight UTC.
  */
 export const isScheduledOccurrence = (
   events: IcsEvent[] | undefined,
@@ -51,9 +51,11 @@ export const isScheduledOccurrence = (
   occurrenceDate: Date,
 ): boolean => {
   const master = events?.find((e) => e.uid === uid && !e.recurrenceId);
-  const tz = master?.start.local?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
   const target = occurrenceDate.getTime();
-  return expanded.some((d) => d.getTime() === target || toFakeUtc(d, tz).getTime() === target);
+  if (master?.start.type === "DATE") return expanded.some((d) => d.getTime() === target);
+
+  const tz = master?.start.local?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return expanded.some((d) => toFakeUtc(d, tz).getTime() === target);
 };
 
 /**

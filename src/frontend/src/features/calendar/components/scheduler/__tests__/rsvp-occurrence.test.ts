@@ -94,6 +94,25 @@ describe("isScheduledOccurrence", () => {
     expect(isScheduledOccurrence([zoned], UID, [], SECOND)).toBe(false);
   });
 
+  it("does not match a moved series on its raw UTC time", () => {
+    // The series moved from 09:00 to 10:00 in Paris: 10:00 local is
+    // 09:00 UTC. The stale fake UTC 09:00 must not match it.
+    const zoned = master({
+      start: {
+        date: new Date("2026-11-02T09:00:00Z"),
+        type: "DATE-TIME",
+        local: {
+          date: new Date("2026-11-02T10:00:00Z"),
+          timezone: "Europe/Paris",
+          tzoffset: "+0100",
+        },
+      },
+    });
+    const expanded = [new Date("2026-11-03T09:00:00Z")];
+
+    expect(isScheduledOccurrence([zoned], UID, expanded, SECOND)).toBe(false);
+  });
+
   it("matches an all-day occurrence as is", () => {
     const day = new Date("2026-11-03T00:00:00Z");
     const allDay = master({ start: { date: new Date("2026-11-02T00:00:00Z"), type: "DATE" } });
