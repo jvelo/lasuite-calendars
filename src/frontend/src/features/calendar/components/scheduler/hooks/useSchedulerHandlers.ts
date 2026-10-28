@@ -762,8 +762,9 @@ export const useSchedulerHandlers = ({
           }
           const instant = toOccurrenceInstant(occurrenceDate, occurrenceValue);
           const instances = events?.filter((e) => e.uid === event.uid) ?? [];
-          // An override counts while it exists. It can start on another
-          // day, so the expansion window below can miss it.
+          // An override for this occurrence means the occurrence is scheduled.
+          // The override can start on another day, so the expansion window
+          // below can miss it.
           let scheduled = !!findOverride(instances, instant);
           if (!scheduled) {
             // The occurrence exists if the server expansion of the RRULE
