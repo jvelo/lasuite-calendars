@@ -257,6 +257,11 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
           await refreshCalendars();
           return { success: true };
         }
+        // The calendar can have become sync-managed since the last fetch.
+        // A refresh shows its delete action as disabled.
+        if (result.status === 403) {
+          await refreshCalendars();
+        }
         return {
           success: false,
           error: result.error || "Failed to delete calendar",
