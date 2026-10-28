@@ -32,7 +32,8 @@ exclusively via `POST /internal-api/calendars/`.
 `POST /api/v1.0/setup/` to create their first calendar. The frontend
 shows the setup modal when the user owns no calendar. Mailbox calendars
 count as owned. Calendars that other users share with them do not
-count, but a user who has shared calendars can close the modal.
+count, but a user who has shared calendars can close the modal until
+the next page load.
 
 **The Django CalDAV proxy** adds `X-LS-User: {oidc_email}` to every
 request. SabreDAV uses this to authenticate the user and scope access.

@@ -5,7 +5,7 @@
 
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useCalendarContext } from "../../contexts";
+import { useCalendarContext, useOnboardingPrompt } from "../../contexts";
 import { setupCalendar } from "@/features/mailbox/api";
 import { addToast, ToasterItem } from "@/features/ui/components/toaster/Toaster";
 import { CalendarModal } from "./CalendarModal";
@@ -63,13 +63,13 @@ export const CalendarList = () => {
   });
 
   // Onboarding: ask the user to create a calendar when they own none.
-  // A user with shared calendars can close the prompt for this session.
-  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
+  // A user with shared calendars can close the prompt until the page reloads.
+  const onboardingPrompt = useOnboardingPrompt();
   const canDismissOnboarding = sharedCalendars.length > 0;
   const showOnboarding =
     !isCalendarLoading &&
     ownedCalendars.length === 0 &&
-    !(canDismissOnboarding && isOnboardingDismissed);
+    !(canDismissOnboarding && onboardingPrompt.dismissed);
 
   // Wrap save to handle mailbox calendar creation
   const handleSaveWithMailbox = useCallback(
@@ -262,7 +262,7 @@ export const CalendarList = () => {
       <CalendarModal
         isOpen={showOnboarding}
         mode="create"
-        onClose={() => setIsOnboardingDismissed(true)}
+        onClose={onboardingPrompt.dismiss}
         onSave={handleSaveWithMailbox}
         isOnboarding
         isDismissible={canDismissOnboarding}
