@@ -760,12 +760,13 @@ export class CalDavService {
   /**
    * Create or replace the override of one occurrence of a recurring event.
    *
-   * A new override goes in the same ICS resource, as a VEVENT with a
-   * RECURRENCE-ID, and the master gets an EXDATE for the occurrence. An
-   * existing override is replaced in place.
+   * If no override exists, the method adds a VEVENT with a RECURRENCE-ID
+   * to the same ICS resource. It also adds an EXDATE for the occurrence to
+   * the master. If an override exists, the method replaces it.
    *
    * `occurrenceDate` is the wall-clock time of the occurrence in the
-   * timezone of the series, stored in UTC fields ("fake UTC").
+   * timezone of the series. The UTC fields of the date hold this time
+   * ("fake UTC").
    */
   async createOverrideInstance(
     eventUrl: string,
@@ -878,10 +879,11 @@ export class CalDavService {
   }
 
   /**
-   * Fetch the occurrences of an event that the server expands in a time
-   * range. Each date is the RECURRENCE-ID of an occurrence, or the start of
-   * a non-recurring event. A timed date is an instant. An all-day date is
-   * a calendar date at midnight UTC. The server already removes the EXDATEs.
+   * Get the occurrence dates of an event in a time range. The server
+   * expands the RRULE and removes the EXDATEs. Each date is the
+   * RECURRENCE-ID of an occurrence, or the start of a non-recurring event.
+   * A timed date is an instant. An all-day date is a calendar date at
+   * midnight UTC.
    */
   async fetchOccurrenceDates(
     eventUrl: string,

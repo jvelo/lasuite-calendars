@@ -40,8 +40,8 @@ const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
 });
 
 /**
- * Copy the master to one occurrence. The dates move to the occurrence,
- * and the series fields (RRULE, EXDATE) are removed.
+ * Copy the master to one occurrence. Move the dates to the occurrence.
+ * Remove the series fields (RRULE, EXDATE).
  */
 const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
   const offset = instant.getTime() - master.start.date.getTime();
@@ -87,11 +87,12 @@ export const toSeriesWallClock = (master: IcsEvent | undefined, instant: Date): 
 
 /**
  * Build the event data of the answer to one occurrence. The base is the
- * override of the occurrence, or else the master moved to the occurrence.
- * Only the PARTSTAT of the attendee changes. `createOverrideInstance`
- * sets the RECURRENCE-ID.
+ * override of the occurrence. If there is no override, the base is a copy
+ * of the master at the occurrence. Only the PARTSTAT of the attendee
+ * changes. `createOverrideInstance` sets the RECURRENCE-ID.
  *
- * Returns undefined when the event has no such override and no master.
+ * The function returns undefined if the event has no override and no
+ * master.
  */
 export const buildOccurrenceReply = (
   { master, override }: RsvpEvent,

@@ -264,8 +264,8 @@ function toCalDavTime(value: Date | string): string {
 
 type CalendarQueryParams = {
   /**
-   * Bounds `expand`. When no `uid` is given, it also keeps only the events
-   * that overlap this range.
+   * Sets the range of `expand`. If there is no `uid`, the server also
+   * returns only the events that overlap this range.
    */
   timeRange?: { start: Date | string; end: Date | string };
   /**
