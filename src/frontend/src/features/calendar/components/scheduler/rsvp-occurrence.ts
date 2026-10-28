@@ -2,61 +2,48 @@ import type { IcsAttendeePartStatusType, IcsDateObject, IcsEvent } from "ts-ics"
 
 import { getEventCalendarAdapter } from "../../services/dav/EventCalendarAdapter";
 
-const instantOf = (value: IcsDateObject): Date => value.local?.date ?? value.date;
-
-const isSameDate = (value: IcsDateObject, date: Date): boolean =>
-  value.date.getTime() === date.getTime() || value.local?.date.getTime() === date.getTime();
-
-const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
-  ...value,
-  date,
-  local: value.local && { ...value.local, date },
-});
-
-/** Copy the master to one occurrence. The start and the end move; the rest stays. */
-const occurrenceOf = (master: IcsEvent, occurrenceDate: Date): IcsEvent => {
-  const offset = occurrenceDate.getTime() - instantOf(master.start).getTime();
-  const start = moveTo(master.start, occurrenceDate);
-  const moved: IcsEvent = master.end
-    ? {
-        ...master,
-        start,
-        end: moveTo(master.end, new Date(instantOf(master.end).getTime() + offset)),
-      }
-    : { ...master, start };
-  return { ...moved, recurrenceRule: undefined, exceptionDates: undefined };
-};
-
-/** Find the override VEVENT of the occurrence at `occurrenceDate`. */
-export const findOverride = (instances: IcsEvent[], occurrenceDate: Date): IcsEvent | undefined =>
-  instances.find((e) => e.recurrenceId && isSameDate(e.recurrenceId.value, occurrenceDate));
-
 /** Give the wall-clock time of `date` in `timezone`, stored as UTC ("fake UTC"). */
 const toFakeUtc = (date: Date, timezone: string): Date => {
   const c = getEventCalendarAdapter().getDateComponentsInTimezone(date, timezone);
   return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hours, c.minutes, c.seconds));
 };
 
-/**
- * Tell if the server expansion still holds the occurrence at `occurrenceDate`.
- *
- * `expanded` holds real UTC dates. For a timed series, `occurrenceDate` is
- * fake UTC in the series timezone, or in the browser timezone without a
- * TZID. For an all-day series, both hold midnight UTC.
- */
-export const isScheduledOccurrence = (
-  events: IcsEvent[] | undefined,
-  uid: string,
-  expanded: Date[],
-  occurrenceDate: Date,
-): boolean => {
-  const master = events?.find((e) => e.uid === uid && !e.recurrenceId);
-  const target = occurrenceDate.getTime();
-  if (master?.start.type === "DATE") return expanded.some((d) => d.getTime() === target);
-
-  const tz = master?.start.local?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
-  return expanded.some((d) => toFakeUtc(d, tz).getTime() === target);
+/** Give the real UTC instant of a fake UTC date in `timezone`. */
+const fromFakeUtc = (date: Date, timezone: string): Date => {
+  const offset = (d: Date) => toFakeUtc(d, timezone).getTime() - d.getTime();
+  // A second pass corrects the offset near a DST change.
+  const guess = new Date(date.getTime() - offset(date));
+  return new Date(date.getTime() - offset(guess));
 };
+
+/**
+ * Give the real UTC instant of an occurrence date from the grid.
+ *
+ * The grid gives fake UTC in the timezone of `value.local`. An all-day
+ * date stays at midnight UTC, as in the server expansion.
+ */
+export const toOccurrenceInstant = (date: Date, value?: IcsDateObject): Date =>
+  value?.type === "DATE" || !value?.local ? date : fromFakeUtc(date, value.local.timezone);
+
+const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
+  ...value,
+  date,
+  local: value.local && { ...value.local, date: toFakeUtc(date, value.local.timezone) },
+});
+
+/** Copy the master to one occurrence. The start and the end move; the rest stays. */
+const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
+  const offset = instant.getTime() - master.start.date.getTime();
+  const start = moveTo(master.start, instant);
+  const moved: IcsEvent = master.end
+    ? { ...master, start, end: moveTo(master.end, new Date(master.end.date.getTime() + offset)) }
+    : { ...master, start };
+  return { ...moved, recurrenceRule: undefined, exceptionDates: undefined };
+};
+
+/** Find the override VEVENT whose RECURRENCE-ID is at `instant` (real UTC). */
+export const findOverride = (instances: IcsEvent[], instant: Date): IcsEvent | undefined =>
+  instances.find((e) => e.recurrenceId?.value.date.getTime() === instant.getTime());
 
 /**
  * Build the override that answers one occurrence, from the server copy
@@ -68,14 +55,13 @@ export const isScheduledOccurrence = (
 export const buildOccurrenceReply = (
   events: IcsEvent[] | undefined,
   uid: string,
-  occurrenceDate: Date,
+  instant: Date,
   attendeeEmail: string,
   partstat: IcsAttendeePartStatusType,
 ): IcsEvent | undefined => {
   const instances = events?.filter((e) => e.uid === uid) ?? [];
   const master = instances.find((e) => !e.recurrenceId);
-  const base =
-    findOverride(instances, occurrenceDate) ?? (master && occurrenceOf(master, occurrenceDate));
+  const base = findOverride(instances, instant) ?? (master && occurrenceOf(master, instant));
   if (!base) return undefined;
 
   const email = attendeeEmail.toLowerCase();

@@ -16,9 +16,9 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
  * the server stores it.
  *
  * Give `occurrence` to check a single occurrence of a recurring event.
- * `scheduled` tells if the server expansion still holds it. An
- * occurrence is cancelled when it is not scheduled, or when its override
- * has STATUS:CANCELLED.
+ * `date` is its RECURRENCE-ID in real UTC. `scheduled` tells if the
+ * occurrence still exists. An occurrence is cancelled when it is not
+ * scheduled, or when its override has STATUS:CANCELLED.
  *
  * Returns null when the attendee can answer.
  */

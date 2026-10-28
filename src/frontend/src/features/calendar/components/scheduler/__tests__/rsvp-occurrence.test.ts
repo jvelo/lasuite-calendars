@@ -1,4 +1,4 @@
-import { buildOccurrenceReply, isScheduledOccurrence } from "../rsvp-occurrence";
+import { buildOccurrenceReply, toOccurrenceInstant } from "../rsvp-occurrence";
 
 import type { IcsEvent } from "ts-ics";
 
@@ -39,17 +39,20 @@ describe("buildOccurrenceReply", () => {
     ]);
   });
 
-  it("keeps the local date of a zoned start in step with the occurrence", () => {
+  it("gives a zoned start the wall-clock time of the occurrence", () => {
+    // 09:00 in Paris is 08:00 UTC.
     const zoned = master({
       start: {
-        date: START,
+        date: new Date("2026-11-02T08:00:00Z"),
         type: "DATE-TIME",
         local: { date: START, timezone: "Europe/Paris", tzoffset: "+0100" },
       },
     });
+    const instant = new Date("2026-11-03T08:00:00Z");
 
-    const reply = buildOccurrenceReply([zoned], UID, SECOND, USER, "ACCEPTED");
+    const reply = buildOccurrenceReply([zoned], UID, instant, USER, "ACCEPTED");
 
+    expect(reply?.start.date).toEqual(instant);
     expect(reply?.start.local).toEqual({
       date: SECOND,
       timezone: "Europe/Paris",
@@ -78,45 +81,40 @@ describe("buildOccurrenceReply", () => {
   });
 });
 
-describe("isScheduledOccurrence", () => {
-  it("matches a zoned occurrence against the real UTC expansion", () => {
-    // 09:00 in Paris is 08:00 UTC. The fake UTC occurrence holds 09:00.
-    const zoned = master({
-      start: {
-        date: START,
-        type: "DATE-TIME",
-        local: { date: START, timezone: "Europe/Paris", tzoffset: "+0100" },
-      },
-    });
-    const expanded = [new Date("2026-11-03T08:00:00Z")];
+describe("toOccurrenceInstant", () => {
+  it("converts a fake UTC date in its timezone to real UTC", () => {
+    const local = { date: SECOND, timezone: "Europe/Paris", tzoffset: "+0100" };
+    const value = { date: SECOND, type: "DATE-TIME" as const, local };
 
-    expect(isScheduledOccurrence([zoned], UID, expanded, SECOND)).toBe(true);
-    expect(isScheduledOccurrence([zoned], UID, [], SECOND)).toBe(false);
+    expect(toOccurrenceInstant(SECOND, value)).toEqual(new Date("2026-11-03T08:00:00Z"));
   });
 
-  it("does not match a moved series on its raw UTC time", () => {
-    // The series moved from 09:00 to 10:00 in Paris: 10:00 local is
-    // 09:00 UTC. The stale fake UTC 09:00 must not match it.
-    const zoned = master({
-      start: {
-        date: new Date("2026-11-02T09:00:00Z"),
-        type: "DATE-TIME",
-        local: {
-          date: new Date("2026-11-02T10:00:00Z"),
-          timezone: "Europe/Paris",
-          tzoffset: "+0100",
-        },
-      },
-    });
-    const expanded = [new Date("2026-11-03T09:00:00Z")];
+  it("uses the timezone of the grid, not the series", () => {
+    // A UTC browser shows a Paris event at 08:00.
+    const utc = new Date("2026-11-03T08:00:00Z");
+    const value = {
+      date: utc,
+      type: "DATE-TIME" as const,
+      local: { date: utc, timezone: "UTC", tzoffset: "+0000" },
+    };
 
-    expect(isScheduledOccurrence([zoned], UID, expanded, SECOND)).toBe(false);
+    expect(toOccurrenceInstant(utc, value)).toEqual(utc);
   });
 
-  it("matches an all-day occurrence as is", () => {
+  it("applies the summer offset", () => {
+    const summer = new Date("2026-07-01T09:00:00Z");
+    const value = {
+      date: summer,
+      type: "DATE-TIME" as const,
+      local: { date: summer, timezone: "Europe/Paris", tzoffset: "+0200" },
+    };
+
+    expect(toOccurrenceInstant(summer, value)).toEqual(new Date("2026-07-01T07:00:00Z"));
+  });
+
+  it("keeps an all-day date at midnight UTC", () => {
     const day = new Date("2026-11-03T00:00:00Z");
-    const allDay = master({ start: { date: new Date("2026-11-02T00:00:00Z"), type: "DATE" } });
 
-    expect(isScheduledOccurrence([allDay], UID, [day], day)).toBe(true);
+    expect(toOccurrenceInstant(day, { date: day, type: "DATE" })).toEqual(day);
   });
 });

@@ -10,7 +10,7 @@ import { useAuth } from "@/features/auth/Auth";
 import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster/Toaster";
 import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
 import { findRsvpBlocker, RSVP_BLOCKER_MESSAGE_KEYS, type RsvpBlocker } from "../rsvp-blocker";
-import { buildOccurrenceReply, isScheduledOccurrence } from "../rsvp-occurrence";
+import { buildOccurrenceReply, findOverride, toOccurrenceInstant } from "../rsvp-occurrence";
 
 import type {
   EventCalendarEvent,
@@ -736,6 +736,8 @@ export const useSchedulerHandlers = ({
         if (event.start.date instanceof Date) return event.start.date;
         return new Date(event.start.date as unknown as string);
       })();
+      const occurrenceValue =
+        modalState.event?.recurrenceId?.value ?? modalState.event?.start ?? event.start;
 
       const attempt = async (): Promise<RsvpBlocker | CalDavResponse<unknown>> => {
         const fetched = await caldavService.fetchEvent(eventUrl);
@@ -750,30 +752,30 @@ export const useSchedulerHandlers = ({
           if (!occurrenceDate) {
             return { success: false as const, error: "No occurrence date" };
           }
-          // The server expands the RRULE. It is the reference for which
-          // occurrences still exist. A day on each side covers any offset.
-          const expanded = await caldavService.fetchOccurrenceDates(eventUrl, event.uid, {
-            start: new Date(occurrenceDate.getTime() - DAY_MS),
-            end: new Date(occurrenceDate.getTime() + DAY_MS),
-          });
-          if (!expanded.success || !expanded.data) {
-            throw new Error(expanded.error ?? "Failed to expand event");
+          const instant = toOccurrenceInstant(occurrenceDate, occurrenceValue);
+          // An override keeps its RECURRENCE-ID but can start on another
+          // day, so it counts while it exists. Without an override, the
+          // server expansion tells if the RRULE still produces the date.
+          const instances = events?.filter((e) => e.uid === event.uid) ?? [];
+          let scheduled = !!findOverride(instances, instant);
+          if (!scheduled) {
+            const expanded = await caldavService.fetchOccurrenceDates(eventUrl, event.uid, {
+              start: new Date(instant.getTime() - DAY_MS),
+              end: new Date(instant.getTime() + DAY_MS),
+            });
+            if (!expanded.success || !expanded.data) {
+              throw new Error(expanded.error ?? "Failed to expand event");
+            }
+            scheduled = expanded.data.some((d) => d.getTime() === instant.getTime());
           }
-          const scheduled = isScheduledOccurrence(events, event.uid, expanded.data, occurrenceDate);
           const blocker = findRsvpBlocker(events, event.uid, userEmail, {
-            date: occurrenceDate,
+            date: instant,
             scheduled,
           });
           if (blocker) return blocker;
           // Answer on the server copy of the occurrence. The modal event
           // can hold stale data.
-          const overrideEvent = buildOccurrenceReply(
-            events,
-            event.uid,
-            occurrenceDate,
-            userEmail,
-            status,
-          );
+          const overrideEvent = buildOccurrenceReply(events, event.uid, instant, userEmail, status);
           if (!overrideEvent) {
             return { success: false as const, error: "Occurrence not found" };
           }
