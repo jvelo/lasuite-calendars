@@ -236,17 +236,11 @@ in `calendarinstances`. This distinguishes them from manual shares and
 allows the sync to cleanly add/update/remove its own shares without
 touching user-created ones.
 
-A user cannot delete their own sync-managed instance. `MailboxPlugin`
-refuses the `DELETE` with a 403, because the next sync would create the
-instance again. To remove the calendar from a user's list, remove their
-access to the mailbox in Messages.
-
-SabreDAV exposes `LS:calendar-sync-managed` with the value `true` on
-these instances. The frontend uses it to show the delete action as
-disabled, with a note that Messages manages the access. A manual share
-of a mailbox calendar does not have this property, so its sharee can
-delete it. If Messages later gives the sharee access to the mailbox, the
-sync takes control of the share and sets the property.
+A user cannot delete a sync-managed instance. `MailboxPlugin` refuses
+the `DELETE` with a 403, because the next sync would create it again.
+To remove the calendar from a user's list, remove their access to the
+mailbox in Messages. These instances expose `LS:calendar-sync-managed`,
+so clients can disable the delete action. Manual shares do not have it.
 
 ### Restriction on MAILBOX calendar sharing
 
