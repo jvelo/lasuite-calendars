@@ -15,6 +15,7 @@ Frontend (EventModal)
             → RSVP link or iTIP client response
               → RSVPConfirmView (Django) or CalDAV REPLY
                 → PARTSTAT updated in event
+                  → Organizer notified (CalDAV REPLY path only)
 ```
 
 ## Creating an event with attendees

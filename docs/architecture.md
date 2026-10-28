@@ -90,7 +90,7 @@ The CalDAV server is a **standards-compliant CalDAV server** that handles all ca
 
 The frontend provides the user interface and interacts with both REST API and CalDAV protocol:
 - Modern React-based UI
-- Uses REST API for users, resources, channels and settings
+- Uses REST API for users, resources, channels, onboarding setup, ICS import and settings
 - Uses CalDAV protocol directly for event operations
 - Supports multiple languages and themes
 
