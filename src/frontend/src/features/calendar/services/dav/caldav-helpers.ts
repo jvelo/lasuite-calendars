@@ -263,7 +263,10 @@ function toCalDavTime(value: Date | string): string {
 }
 
 type CalendarQueryParams = {
-  /** When provided, results are filtered to events overlapping this range. */
+  /**
+   * Bounds `expand`. When no `uid` is given, it also keeps only the events
+   * that overlap this range.
+   */
   timeRange?: { start: Date | string; end: Date | string };
   /**
    * When true, the server expands recurring events into individual

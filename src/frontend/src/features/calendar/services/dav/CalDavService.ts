@@ -758,11 +758,14 @@ export class CalDavService {
   }
 
   /**
-   * Create an override instance for a recurring event.
+   * Create or replace the override of one occurrence of a recurring event.
    *
-   * This adds the modified occurrence as a new VEVENT with RECURRENCE-ID
-   * inside the same ICS resource, and adds an EXDATE to the parent event
-   * to exclude the original occurrence.
+   * A new override goes in the same ICS resource, as a VEVENT with a
+   * RECURRENCE-ID, and the master gets an EXDATE for the occurrence. An
+   * existing override is replaced in place.
+   *
+   * `occurrenceDate` is the wall-clock time of the occurrence in the
+   * timezone of the series, stored in UTC fields ("fake UTC").
    */
   async createOverrideInstance(
     eventUrl: string,
@@ -792,9 +795,8 @@ export class CalDavService {
         throw new Error("Source event not found in ICS data");
       }
 
-      // occurrenceDate is already in "fake UTC" format (UTC components = local timezone
-      // time), since it comes from adapter.toIcsEvent() which creates fake UTC dates.
-      // Use it directly with the source event's timezone info.
+      // occurrenceDate is fake UTC in the timezone of the series. Use it with
+      // the timezone info of the source event.
       const occurrenceFakeUtc = occurrenceDate;
       let occurrenceLocal: { date: Date; timezone: string; tzoffset: string } | undefined;
 
@@ -877,8 +879,9 @@ export class CalDavService {
 
   /**
    * Fetch the occurrences of an event that the server expands in a time
-   * range. Each date is the instant of a RECURRENCE-ID, or the start of a
-   * non-recurring event. The server already removes the EXDATEs.
+   * range. Each date is the RECURRENCE-ID of an occurrence, or the start of
+   * a non-recurring event. A timed date is an instant. An all-day date is
+   * a calendar date at midnight UTC. The server already removes the EXDATEs.
    */
   async fetchOccurrenceDates(
     eventUrl: string,
