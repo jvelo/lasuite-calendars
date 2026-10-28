@@ -90,7 +90,7 @@ export const CalendarItemMenu = ({
     items.push({
       label: t("calendar.list.delete"),
       icon: <Trash />,
-      callback: isManagedByMessages ? undefined : onDelete,
+      callback: onDelete,
       isDisabled: isManagedByMessages,
       subText: isManagedByMessages ? t("calendar.list.managedByMessages") : undefined,
     });
