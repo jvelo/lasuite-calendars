@@ -877,7 +877,7 @@ export class CalDavService {
 
   /**
    * Fetch the occurrences of an event that the server expands in a time
-   * range. Each date is a RECURRENCE-ID in real UTC, or the start of a
+   * range. Each date is the instant of a RECURRENCE-ID, or the start of a
    * non-recurring event. The server already removes the EXDATEs.
    */
   async fetchOccurrenceDates(

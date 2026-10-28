@@ -3,33 +3,36 @@ import type { IcsAttendeePartStatusType, IcsDateObject, IcsEvent } from "ts-ics"
 import type { RsvpBlocker } from "../types";
 import { getEventCalendarAdapter } from "../../../services/dav/EventCalendarAdapter";
 
-/** Give the wall-clock time of `date` in `timezone`, stored as UTC ("fake UTC"). */
-const toFakeUtc = (date: Date, timezone: string): Date => {
+/**
+ * Give the wall-clock time of `date` in `timezone`. The result stores
+ * that time in UTC fields, so 10:00 in Paris becomes 10:00Z.
+ */
+const toWallClock = (date: Date, timezone: string): Date => {
   const c = getEventCalendarAdapter().getDateComponentsInTimezone(date, timezone);
   return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hours, c.minutes, c.seconds));
 };
 
-/** Give the real UTC instant of a fake UTC date in `timezone`. */
-const fromFakeUtc = (date: Date, timezone: string): Date => {
-  const offset = (d: Date) => toFakeUtc(d, timezone).getTime() - d.getTime();
+/** Give the instant at which the clock in `timezone` shows `wallClock`. */
+const fromWallClock = (wallClock: Date, timezone: string): Date => {
+  const offset = (d: Date) => toWallClock(d, timezone).getTime() - d.getTime();
   // A second pass corrects the offset near a DST change.
-  const guess = new Date(date.getTime() - offset(date));
-  return new Date(date.getTime() - offset(guess));
+  const guess = new Date(wallClock.getTime() - offset(wallClock));
+  return new Date(wallClock.getTime() - offset(guess));
 };
 
 /**
- * Give the real UTC instant of an occurrence date from the grid.
+ * Give the instant of an occurrence date from the grid.
  *
- * The grid gives fake UTC in the timezone of `value.local`. An all-day
- * date stays at midnight UTC, as in the server expansion.
+ * The grid gives the wall-clock time in the timezone of `value.local`.
+ * An all-day date stays at midnight UTC, as in the server expansion.
  */
 export const toOccurrenceInstant = (date: Date, value?: IcsDateObject): Date =>
-  value?.type === "DATE" || !value?.local ? date : fromFakeUtc(date, value.local.timezone);
+  value?.type === "DATE" || !value?.local ? date : fromWallClock(date, value.local.timezone);
 
 const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
   ...value,
   date,
-  local: value.local && { ...value.local, date: toFakeUtc(date, value.local.timezone) },
+  local: value.local && { ...value.local, date: toWallClock(date, value.local.timezone) },
 });
 
 /** Copy the master to one occurrence. Only the start and the end change. */
@@ -42,7 +45,7 @@ const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
   return { ...moved, recurrenceRule: undefined, exceptionDates: undefined };
 };
 
-/** Find the override VEVENT whose RECURRENCE-ID is at `instant` (real UTC). */
+/** Find the override VEVENT whose RECURRENCE-ID is at `instant`. */
 export const findOverride = (instances: IcsEvent[], instant: Date): IcsEvent | undefined =>
   instances.find((e) => e.recurrenceId?.value.date.getTime() === instant.getTime());
 
@@ -85,7 +88,7 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
  * server copy of the event.
  *
  * Give `occurrence` to check a single occurrence of a recurring event.
- * `date` is its RECURRENCE-ID in real UTC. `scheduled` tells if the
+ * `date` is the instant of its RECURRENCE-ID. `scheduled` tells if the
  * occurrence still exists. An occurrence is cancelled when it is not
  * scheduled, or when its override has STATUS:CANCELLED.
  *

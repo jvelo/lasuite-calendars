@@ -152,7 +152,7 @@ describe("buildOccurrenceReply", () => {
 });
 
 describe("toOccurrenceInstant", () => {
-  it("converts a fake UTC date in its timezone to real UTC", () => {
+  it("converts a wall-clock time in its timezone to an instant", () => {
     const local = { date: SECOND, timezone: "Europe/Paris", tzoffset: "+0100" };
     const value = { date: SECOND, type: "DATE-TIME" as const, local };
 
