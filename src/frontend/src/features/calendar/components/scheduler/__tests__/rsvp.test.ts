@@ -156,6 +156,19 @@ describe("toOccurrenceInstant", () => {
     expect(toOccurrenceInstant(summer, value)).toEqual(new Date("2026-07-01T07:00:00Z"));
   });
 
+  it("tells apart the two times of the repeated hour", () => {
+    // On 2026-10-25, Paris shows 02:30 twice: at 00:30Z and at 01:30Z.
+    const wallClock = new Date("2026-10-25T02:30:00Z");
+    const at = (tzoffset: string) => ({
+      date: wallClock,
+      type: "DATE-TIME" as const,
+      local: { date: wallClock, timezone: "Europe/Paris", tzoffset },
+    });
+
+    expect(toOccurrenceInstant(wallClock, at("+0200"))).toEqual(new Date("2026-10-25T00:30:00Z"));
+    expect(toOccurrenceInstant(wallClock, at("+0100"))).toEqual(new Date("2026-10-25T01:30:00Z"));
+  });
+
   it("keeps an all-day date at midnight UTC", () => {
     const day = new Date("2026-11-03T00:00:00Z");
 

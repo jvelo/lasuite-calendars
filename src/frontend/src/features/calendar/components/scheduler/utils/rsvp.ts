@@ -12,22 +12,26 @@ const toWallClock = (date: Date, timezone: string): Date => {
   return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hours, c.minutes, c.seconds));
 };
 
-/** Give the instant at which the clock in `timezone` shows `wallClock`. */
-const fromWallClock = (wallClock: Date, timezone: string): Date => {
-  const offset = (d: Date) => toWallClock(d, timezone).getTime() - d.getTime();
-  // A second pass corrects the offset near a DST change.
-  const guess = new Date(wallClock.getTime() - offset(wallClock));
-  return new Date(wallClock.getTime() - offset(guess));
+/** Give the milliseconds of a UTC offset such as "+0200". */
+const offsetMs = (tzoffset: string): number => {
+  const m = /^([+-])(\d{2})(\d{2})$/.exec(tzoffset);
+  if (!m) return 0;
+  const ms = (Number(m[2]) * 60 + Number(m[3])) * 60_000;
+  return m[1] === "-" ? -ms : ms;
 };
 
 /**
  * Give the instant of an occurrence date from the grid.
  *
- * The grid gives the wall-clock time in the timezone of `value.local`.
- * An all-day date stays at midnight UTC, as in the server expansion.
+ * The grid gives the wall-clock time and the UTC offset of the
+ * occurrence. The offset tells apart the two times of the hour that
+ * repeats when daylight saving time ends. An all-day date stays at
+ * midnight UTC, as in the server expansion.
  */
 export const toOccurrenceInstant = (date: Date, value?: IcsDateObject): Date =>
-  value?.type === "DATE" || !value?.local ? date : fromWallClock(date, value.local.timezone);
+  value?.type === "DATE" || !value?.local
+    ? date
+    : new Date(date.getTime() - offsetMs(value.local.tzoffset));
 
 const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
   ...value,
