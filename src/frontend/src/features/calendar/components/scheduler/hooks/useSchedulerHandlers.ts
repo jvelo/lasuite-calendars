@@ -11,8 +11,8 @@ import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster
 import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
 import {
   buildOccurrenceReply,
-  findOverride,
   findRsvpBlocker,
+  resolveRsvpEvent,
   RSVP_BLOCKER_MESSAGE_KEYS,
   toOccurrenceInstant,
   toSeriesWallClock,
@@ -696,24 +696,15 @@ export const useSchedulerHandlers = ({
   /**
    * Answer an invitation as the current user.
    *
-   * The modal copy can be stale: the organizer can change the event after
-   * the grid loads it. So each attempt works on the server copy:
+   * Each attempt reads the event from the server, because the modal copy
+   * can be stale. The handler refuses the answer when the server copy shows
+   * a cancelled or deleted event, a removed attendee, or an occurrence that
+   * no longer exists. Otherwise it changes only the PARTSTAT of the user,
+   * in the master or in the override of the occurrence. It writes with the
+   * ETag of the read.
    *
-   * 1. Read the event from the server.
-   * 2. Check that the user can still answer (`findRsvpBlocker`). For one
-   *    occurrence, also check that it is still scheduled: an override
-   *    exists for it, or the server expansion of the RRULE contains it.
-   * 3. Change only the PARTSTAT of the user:
-   *    - "this": in the override of the occurrence. If no override exists,
-   *      build one from the master.
-   *    - "all", or a non-recurring event: in the master VEVENT.
-   * 4. Write with the ETag of the read. SabreDAV sends the iTIP REPLY to
-   *    the organizer.
-   *
-   * If the check fails, the handler does not write. It shows the reason and
-   * reloads the grid. A 412 means that the event changed between the read
-   * and the write. The handler then tries once more. A second 412 shows an
-   * error.
+   * A 412 means that the event changed between the read and the write. The
+   * handler then tries once more. A second 412 shows an error.
    */
   const handleRespondToInvitation = useCallback(
     async (
@@ -737,7 +728,7 @@ export const useSchedulerHandlers = ({
       // For the "this occurrence" path we need the occurrence date from the
       // event as it was opened in the modal (modalState.event), not from the
       // potentially edited form-built event.
-      const occurrenceDate: Date | undefined = (() => {
+      const occurrenceDate: Date = (() => {
         const src = modalState.event;
         if (src?.recurrenceId?.value?.date instanceof Date) {
           return src.recurrenceId.value.date;
@@ -760,15 +751,12 @@ export const useSchedulerHandlers = ({
         const etag = fetched.data.etag;
 
         if (option === "this") {
-          if (!occurrenceDate) {
-            return { success: false as const, error: "No occurrence date" };
-          }
           const instant = toOccurrenceInstant(occurrenceDate, occurrenceValue);
-          const instances = events?.filter((e) => e.uid === event.uid) ?? [];
+          const resolved = resolveRsvpEvent(events, event.uid, instant);
           // An override for this occurrence means the occurrence is scheduled.
           // The override can start on another day, so the expansion window
           // below can miss it.
-          let scheduled = !!findOverride(instances, instant);
+          let scheduled = !!resolved.override;
           if (!scheduled) {
             // The occurrence exists if the server expansion of the RRULE
             // still contains its date.
@@ -781,26 +769,24 @@ export const useSchedulerHandlers = ({
             }
             scheduled = expanded.data.some((d) => d.getTime() === instant.getTime());
           }
-          const blocker = findRsvpBlocker(events, event.uid, userEmail, {
-            date: instant,
-            scheduled,
-          });
+          const blocker = findRsvpBlocker(resolved, userEmail, scheduled);
           if (blocker) return blocker;
-          const overrideEvent = buildOccurrenceReply(events, event.uid, instant, userEmail, status);
+          const overrideEvent = buildOccurrenceReply(resolved, instant, userEmail, status);
           if (!overrideEvent) {
             return { success: false as const, error: "Occurrence not found" };
           }
           return caldavService.createOverrideInstance(
             eventUrl,
             overrideEvent,
-            toSeriesWallClock(events, event.uid, instant),
+            toSeriesWallClock(resolved.master, instant),
             etag,
           );
         }
 
-        const blocker = findRsvpBlocker(events, event.uid, userEmail);
+        const resolved = resolveRsvpEvent(events, event.uid);
+        const blocker = findRsvpBlocker(resolved, userEmail);
         if (blocker) return blocker;
-        const master = events?.find((e) => e.uid === event.uid && !e.recurrenceId);
+        const { master } = resolved;
         if (!master) {
           return { success: false as const, error: "Master event not found" };
         }

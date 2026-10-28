@@ -1,11 +1,12 @@
 import {
   buildOccurrenceReply,
   findRsvpBlocker,
+  resolveRsvpEvent,
   toOccurrenceInstant,
   toSeriesWallClock,
 } from "../utils/rsvp";
 
-import type { IcsEvent } from "ts-ics";
+import type { IcsAttendeePartStatusType, IcsEvent } from "ts-ics";
 
 const UID = "event-uid";
 const USER = "bob@example.com";
@@ -42,50 +43,56 @@ const override = (overrides: Partial<IcsEvent> = {}) =>
 const scheduled = (date: Date) => ({ date, scheduled: true });
 const unscheduled = (date: Date) => ({ date, scheduled: false });
 
+const blocker = (events: IcsEvent[] | undefined, occurrence?: { date: Date; scheduled: boolean }) =>
+  findRsvpBlocker(resolveRsvpEvent(events, UID, occurrence?.date), USER, occurrence?.scheduled);
+
+const answer = (events: IcsEvent[], instant: Date, partstat: IcsAttendeePartStatusType) =>
+  buildOccurrenceReply(resolveRsvpEvent(events, UID, instant), instant, USER, partstat);
+
 describe("findRsvpBlocker", () => {
   it("allows an answer to a confirmed event", () => {
-    expect(findRsvpBlocker([master()], UID, USER)).toBeNull();
+    expect(blocker([master()])).toBeNull();
   });
 
   it("reports a deleted event", () => {
-    expect(findRsvpBlocker([], UID, USER)).toBe("deleted");
-    expect(findRsvpBlocker(undefined, UID, USER)).toBe("deleted");
-    expect(findRsvpBlocker([master({ uid: "other" })], UID, USER)).toBe("deleted");
+    expect(blocker([])).toBe("deleted");
+    expect(blocker(undefined)).toBe("deleted");
+    expect(blocker([master({ uid: "other" })])).toBe("deleted");
   });
 
   it("reports a cancelled event", () => {
-    expect(findRsvpBlocker([master({ status: "CANCELLED" })], UID, USER)).toBe("cancelled");
+    expect(blocker([master({ status: "CANCELLED" })])).toBe("cancelled");
   });
 
   it("reports a removed attendee", () => {
     const events = [master({ attendees: [{ email: "carol@example.com" }] })];
-    expect(findRsvpBlocker(events, UID, USER)).toBe("notAttendee");
+    expect(blocker(events)).toBe("notAttendee");
   });
 
   it("allows an answer to a scheduled occurrence", () => {
-    expect(findRsvpBlocker([master()], UID, USER, scheduled(SECOND))).toBeNull();
+    expect(blocker([master()], scheduled(SECOND))).toBeNull();
   });
 
   it("reports an occurrence that the server no longer expands", () => {
-    expect(findRsvpBlocker([master()], UID, USER, unscheduled(SECOND))).toBe("cancelled");
+    expect(blocker([master()], unscheduled(SECOND))).toBe("cancelled");
   });
 
   it("reports a cancelled override", () => {
     const events = [master(), override({ status: "CANCELLED" })];
-    expect(findRsvpBlocker(events, UID, USER, scheduled(SECOND))).toBe("cancelled");
-    expect(findRsvpBlocker(events, UID, USER, scheduled(START))).toBeNull();
+    expect(blocker(events, scheduled(SECOND))).toBe("cancelled");
+    expect(blocker(events, scheduled(START))).toBeNull();
   });
 
   it("reports an attendee removed from one override", () => {
     const events = [master(), override({ attendees: [] })];
-    expect(findRsvpBlocker(events, UID, USER, scheduled(SECOND))).toBe("notAttendee");
-    expect(findRsvpBlocker(events, UID, USER, scheduled(START))).toBeNull();
+    expect(blocker(events, scheduled(SECOND))).toBe("notAttendee");
+    expect(blocker(events, scheduled(START))).toBeNull();
   });
 });
 
 describe("buildOccurrenceReply", () => {
   it("moves the master to the occurrence and changes only the PARTSTAT", () => {
-    const reply = buildOccurrenceReply([master()], UID, SECOND, USER, "ACCEPTED");
+    const reply = answer([master()], SECOND, "ACCEPTED");
 
     expect(reply?.summary).toBe("Weekly");
     expect(reply?.start.date).toEqual(SECOND);
@@ -109,7 +116,7 @@ describe("buildOccurrenceReply", () => {
     });
     const instant = new Date("2026-11-03T08:00:00Z");
 
-    const reply = buildOccurrenceReply([zoned], UID, instant, USER, "ACCEPTED");
+    const reply = answer([zoned], instant, "ACCEPTED");
 
     expect(reply?.start.date).toEqual(instant);
     expect(reply?.start.local).toEqual({
@@ -125,7 +132,7 @@ describe("buildOccurrenceReply", () => {
       start: { date: new Date("2026-11-03T14:00:00Z"), type: "DATE-TIME" },
     });
 
-    const reply = buildOccurrenceReply([master(), moved], UID, SECOND, USER, "DECLINED");
+    const reply = answer([master(), moved], SECOND, "DECLINED");
 
     expect(reply?.summary).toBe("Moved by the organizer");
     expect(reply?.start.date).toEqual(new Date("2026-11-03T14:00:00Z"));
@@ -133,7 +140,7 @@ describe("buildOccurrenceReply", () => {
   });
 
   it("returns undefined when the server has no VEVENT for the UID", () => {
-    expect(buildOccurrenceReply([], UID, SECOND, USER, "ACCEPTED")).toBeUndefined();
+    expect(answer([], SECOND, "ACCEPTED")).toBeUndefined();
   });
 });
 
@@ -187,10 +194,10 @@ describe("toSeriesWallClock", () => {
       },
     });
 
-    expect(toSeriesWallClock([paris], UID, new Date("2026-11-03T08:00:00Z"))).toEqual(SECOND);
+    expect(toSeriesWallClock(paris, new Date("2026-11-03T08:00:00Z"))).toEqual(SECOND);
   });
 
   it("keeps the instant for a series without timezone", () => {
-    expect(toSeriesWallClock([master()], UID, SECOND)).toEqual(SECOND);
+    expect(toSeriesWallClock(master(), SECOND)).toEqual(SECOND);
   });
 });

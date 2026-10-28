@@ -1,6 +1,6 @@
 import type { IcsAttendeePartStatusType, IcsDateObject, IcsEvent } from "ts-ics";
 
-import type { RsvpBlocker } from "../types";
+import type { RsvpBlocker, RsvpEvent } from "../types";
 import { getEventCalendarAdapter } from "../../../services/dav/EventCalendarAdapter";
 
 /**
@@ -39,7 +39,10 @@ const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
   local: value.local && { ...value.local, date: toWallClock(date, value.local.timezone) },
 });
 
-/** Copy the master to one occurrence. Only the start and the end change. */
+/**
+ * Copy the master to one occurrence. The dates move to the occurrence,
+ * and the series fields (RRULE, EXDATE) are removed.
+ */
 const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
   const offset = instant.getTime() - master.start.date.getTime();
   const start = moveTo(master.start, instant);
@@ -49,43 +52,54 @@ const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
   return { ...moved, recurrenceRule: undefined, exceptionDates: undefined };
 };
 
+/** Find the override VEVENT whose RECURRENCE-ID is at `instant`. */
+const findOverride = (instances: IcsEvent[], instant: Date): IcsEvent | undefined =>
+  instances.find((e) => e.recurrenceId?.value.date.getTime() === instant.getTime());
+
+/**
+ * Find the VEVENTs of one event in the server copy. Give `instant` to
+ * also find the override of that occurrence.
+ */
+export const resolveRsvpEvent = (
+  events: IcsEvent[] | undefined,
+  uid: string,
+  instant?: Date,
+): RsvpEvent => {
+  const instances = events?.filter((e) => e.uid === uid) ?? [];
+  return {
+    instances,
+    master: instances.find((e) => !e.recurrenceId),
+    override: instant && findOverride(instances, instant),
+  };
+};
+
 /**
  * Give the occurrence date as the wall-clock time in the timezone of the
  * series ("fake UTC"). `createOverrideInstance` expects this format. An
  * all-day date, or a series without timezone, keeps the instant.
  */
-export const toSeriesWallClock = (
-  events: IcsEvent[] | undefined,
-  uid: string,
-  instant: Date,
-): Date => {
-  const start = events?.find((e) => e.uid === uid && !e.recurrenceId)?.start;
+export const toSeriesWallClock = (master: IcsEvent | undefined, instant: Date): Date => {
+  const start = master?.start;
   return start?.type === "DATE" || !start?.local
     ? instant
     : toWallClock(instant, start.local.timezone);
 };
 
-/** Find the override VEVENT whose RECURRENCE-ID is at `instant`. */
-export const findOverride = (instances: IcsEvent[], instant: Date): IcsEvent | undefined =>
-  instances.find((e) => e.recurrenceId?.value.date.getTime() === instant.getTime());
-
 /**
- * Build the override that answers one occurrence, from the server copy
- * of the event. The base is the existing override, or else the master
- * moved to the occurrence. Only the PARTSTAT of the attendee changes.
+ * Build the event data of the answer to one occurrence. The base is the
+ * override of the occurrence, or else the master moved to the occurrence.
+ * Only the PARTSTAT of the attendee changes. `createOverrideInstance`
+ * sets the RECURRENCE-ID.
  *
- * Returns undefined when the server copy has no VEVENT for this UID.
+ * Returns undefined when the event has no such override and no master.
  */
 export const buildOccurrenceReply = (
-  events: IcsEvent[] | undefined,
-  uid: string,
+  { master, override }: RsvpEvent,
   instant: Date,
   attendeeEmail: string,
   partstat: IcsAttendeePartStatusType,
 ): IcsEvent | undefined => {
-  const instances = events?.filter((e) => e.uid === uid) ?? [];
-  const master = instances.find((e) => !e.recurrenceId);
-  const base = findOverride(instances, instant) ?? (master && occurrenceOf(master, instant));
+  const base = override ?? (master && occurrenceOf(master, instant));
   if (!base) return undefined;
 
   const email = attendeeEmail.toLowerCase();
@@ -104,32 +118,25 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
 };
 
 /**
- * Find why an attendee cannot answer an invitation. `events` is the
- * server copy of the event.
+ * Find why an attendee cannot answer an invitation.
  *
- * Give `occurrence` to check a single occurrence of a recurring event.
- * `date` is the instant of its RECURRENCE-ID. `scheduled` tells if the
- * occurrence still exists. An occurrence is cancelled when it is not
- * scheduled, or when its override has STATUS:CANCELLED.
+ * Give `scheduled` to check one occurrence: it tells if the occurrence
+ * still exists. An occurrence is cancelled when it is not scheduled, or
+ * when its override has STATUS:CANCELLED.
  *
  * Returns null when the attendee can answer.
  */
 export const findRsvpBlocker = (
-  events: IcsEvent[] | undefined,
-  uid: string,
+  { instances, master, override }: RsvpEvent,
   attendeeEmail: string,
-  occurrence?: { date: Date; scheduled: boolean },
+  scheduled?: boolean,
 ): RsvpBlocker | null => {
-  const instances = events?.filter((e) => e.uid === uid) ?? [];
   if (instances.length === 0) return "deleted";
-
-  const master = instances.find((e) => !e.recurrenceId);
   if (master?.status === "CANCELLED") return "cancelled";
 
   let target = master;
-  if (occurrence) {
-    const override = findOverride(instances, occurrence.date);
-    if (!occurrence.scheduled || override?.status === "CANCELLED") return "cancelled";
+  if (scheduled !== undefined) {
+    if (!scheduled || override?.status === "CANCELLED") return "cancelled";
     target = override ?? master;
   }
 
