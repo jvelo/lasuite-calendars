@@ -226,7 +226,8 @@ a subsequent login succeeds.
 
 ### The Core Problem
 
-CalDAV principals live in a flat namespace: `principals/{username}`.
+CalDAV principals live in a flat namespace: `principals/users/{email}`
+(plus `principals/resources/` and `principals/mailboxes/`).
 When a frontend does a `PROPFIND` on `principals/` or a
 `principal-property-search`, SabreDAV returns **all** principals.
 There is no built-in way to scope results by organization.
@@ -246,8 +247,10 @@ Org scoping is enforced server-side in SabreDAV by filtering
 principal queries by `org_id`. Django never inspects CalDAV
 traffic -- it only sets the `X-LS-Org-Id` header.
 
+`src/caldav/src/PrincipalBackend.php` does the filtering. Simplified version:
+
 ```php
-class OrgAwarePrincipalBackend extends PrincipalBackend
+class PrincipalBackend extends \Sabre\DAVACL\PrincipalBackend\PDO
 {
     public function searchPrincipals($prefixPath, array $searchProperties, $test = 'allof')
     {
@@ -272,13 +275,13 @@ class OrgAwarePrincipalBackend extends PrincipalBackend
 | `searchPrincipals()` | Yes | Used for user/resource discovery |
 | `getPrincipalsByPrefix()` | Yes | Used for listing principals |
 | `getPrincipalByPath()` | **No** | Used for sharing and scheduling with a specific principal — must work cross-org |
-| Schedule outbox free/busy | Yes | Aggregates all calendars for a principal — scoped to same-org |
-| `free-busy-query` on a specific calendar | **No** | If a user has access to a shared calendar, they can query its free/busy regardless of org |
+| Schedule outbox free/busy | **No** | No org filter. `FreeBusyOrgScopePlugin` blocks it only when the org sharing level is `none` |
+| `free-busy-query` on a specific calendar | Partly | `FreeBusyOrgScopePlugin` checks the user email in the request URL. It blocks requests to the calendar home of a user in another org. Requests to a shared instance in the requester's own calendar home pass |
 
-This keeps principal paths stable (`principals/{username}` -- no
-org baked into the URI), enforces scoping at the CalDAV level for
-both web and external clients (Apple Calendar, Thunderbird), and
-allows cross-org sharing to work when explicitly granted.
+Principal paths stay stable: `principals/users/{email}` has no org
+in the URI. SabreDAV enforces the scoping for both web and external
+clients (Apple Calendar, Thunderbird). Cross-org sharing works when
+a user grants it explicitly.
 
 ---
 
@@ -305,17 +308,18 @@ should still work. The frontend sends the sharing request to CalDAV
 with the email address. SabreDAV resolves the recipient via
 `getPrincipalByPath()`, which is **not org-filtered** -- so
 cross-org sharing works. If the recipient is external (not on this
-server), an iTIP email is sent.
+server), SabreDAV creates a principal for that email on demand.
 
-Once shared, the recipient can see that calendar's events and
-query its free/busy (via `free-busy-query` on the specific
-calendar collection), regardless of org. They still cannot
-discover the sharer's other calendars or query their aggregate
-free/busy via the scheduling outbox.
+After a share, the recipient can see the events of that calendar,
+in any org. The recipient cannot discover the other calendars of
+the sharer. `FreeBusyOrgScopePlugin` checks the user email in the
+request URL, not the owner of the calendar. It blocks a
+`free-busy-query` on the owner's URL (`calendars/users/{owner}/...`)
+when the owner is in another org. It allows a `free-busy-query` on
+the shared instance in the recipient's own calendar home.
 
-The UI should make this distinction clear:
-- Autocomplete results: same-org users
-- Manual email entry: "This user is outside your organization"
+In the UI, autocomplete results only show same-org users. Manual
+email entry accepts any email.
 
 ### CalDAV User Search
 
@@ -337,10 +341,9 @@ Key points for org scoping of resources:
    column on the `principals` table as user principals)
 2. **Resource discovery** is scoped to the user's org
 3. **Resource creation** requires an org-admin permission
-4. **Resource email addresses** follow the convention
-   `{opaque-id}@resource.calendar.{APP_DOMAIN}` -- the org is
-   **not** encoded in the email address (see resources.md for
-   rationale)
+4. **Resource email addresses** are
+   `{resource-id}@{RESOURCE_EMAIL_DOMAIN}`. The address does not
+   contain the org (see resources.md for the rationale)
 5. **No cross-org resource booking** -- the auto-schedule plugin
    rejects invitations from users outside the resource's org
 

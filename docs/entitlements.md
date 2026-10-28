@@ -66,21 +66,20 @@ Calendars checks two entitlements:
    regardless of `can_access` value — access is gated at API level
    and in the frontend.
 2. **User API** (`core/api/serializers.py`): `UserMeSerializer`
-   exposes `can_access` as a field on `GET /users/me/`. Fail-open:
-   returns `True` when entitlements are unavailable.
-3. **Default calendar creation** (`core/signals.py`):
-   `provision_default_calendar` checks entitlements before creating a
-   calendar for a new user. Fail-closed: skips creation when
-   entitlements are unavailable.
-4. **CalDAV proxy** (`core/api/viewsets_caldav.py`): Blocks
-   `MKCALENDAR` and `MKCOL` methods for non-entitled users.
-   Other methods (PROPFIND, REPORT, GET, PUT, DELETE) are allowed
-   so that users invited to shared calendars can still use them.
-   Fail-closed: denies creation when entitlements are unavailable.
-5. **Import events** (`core/api/viewsets.py`): Blocks
+   exposes `can_access` as a field on `GET /users/me/`. Fail-closed:
+   returns `False` when entitlements are unavailable.
+3. **CalDAV proxy** (`core/api/viewsets_caldav.py`): Blocks
+   calendar management for non-entitled users: `MKCALENDAR`,
+   `MKCOL`, and `DELETE` or `MOVE` on a calendar collection.
+   Event-level methods (PROPFIND, REPORT, GET, PUT, and DELETE or
+   MOVE on an `.ics` object) stay allowed. Users invited to shared
+   calendars can still use them. A user who loses the entitlement
+   can still remove events. Fail-closed: denies calendar management
+   when entitlements are unavailable.
+4. **Import events** (`core/api/viewsets.py`): Blocks
    `POST /calendars/import-events/` for non-entitled users.
    Fail-closed: denies import when entitlements are unavailable.
-6. **Frontend** (`pages/index.tsx`, `pages/calendar.tsx`): Checks
+5. **Frontend** (`routes/index.tsx`, `features/auth/Auth.tsx`): Checks
    `user.can_access` and redirects to `/no-access` when `false`.
    Calendar creation uses MKCALENDAR via CalDAV proxy (no Django
    endpoint).
@@ -89,14 +88,12 @@ Calendars checks two entitlements:
 
 - **Login is fail-open**: if the entitlements service is unavailable,
   login succeeds and the cache warming is skipped.
-- **User API is fail-open**: if the entitlements service is
-  unavailable, `can_access` defaults to `True`.
-- **Calendar creation is fail-closed**: if the entitlements service
-  is unavailable, the default calendar is not created (avoids
-  provisioning resources for users who may not be entitled).
-- **CalDAV proxy MKCALENDAR/MKCOL is fail-closed**: if the
-  entitlements service is unavailable, calendar creation via CalDAV
-  is denied (returns 403).
+- **User API is fail-closed**: if the entitlements service is
+  unavailable, `can_access` defaults to `False`.
+- **CalDAV calendar management is fail-closed**: if the
+  entitlements service is unavailable, the CalDAV proxy denies
+  `MKCALENDAR`, `MKCOL`, and collection `DELETE` or `MOVE`
+  (returns 403).
 - **Import events is fail-closed**: if the entitlements service is
   unavailable, ICS import is denied (returns 403).
 - **Resource provisioning is fail-closed**: if the entitlements
@@ -244,10 +241,9 @@ header, but cannot access calendars or events.
 | DeployCenter backend | `src/backend/core/entitlements/backends/deploycenter.py` |
 | Auth integration | `src/backend/core/authentication/backends.py` |
 | User API serializer | `src/backend/core/api/serializers.py` |
-| Calendar gating (signal) | `src/backend/core/signals.py` |
 | CalDAV proxy gating | `src/backend/core/api/viewsets_caldav.py` |
 | Import events gating | `src/backend/core/api/viewsets.py` |
-| No-access page | `src/frontend/src/pages/no-access.tsx` |
-| Homepage gate | `src/frontend/src/pages/index.tsx` |
-| Calendar gate | `src/frontend/src/pages/calendar.tsx` |
+| No-access page | `src/frontend/src/routes/no-access.tsx` |
+| Homepage gate | `src/frontend/src/routes/index.tsx` |
+| Auth gate | `src/frontend/src/features/auth/Auth.tsx` |
 | Tests | `src/backend/core/tests/test_entitlements.py` |

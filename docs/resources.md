@@ -2,6 +2,25 @@
 
 This document describes the design and implementation plan for **calendar resources** in La Suite Calendars: meeting rooms, vehicles, projectors, and any other bookable assets that people can reserve alongside events.
 
+> **Note**: this document started as a design document. The code
+> implements these parts:
+> - the Django provisioning API (create and delete),
+> - the resource principals and `ResourceAutoSchedulePlugin` in
+>   SabreDAV,
+> - the resource picker in the event modal,
+> - the `/resources` page (list, search, filter by type, create and
+>   delete), behind the `FEATURE_ADMIN_RESOURCES` flag.
+>
+> These parts describe planned behavior that is not implemented yet:
+> - resource metadata (capacity, location, tags),
+> - sharing and delegation,
+> - the other resource directory filters, the resource detail panel,
+>   the resource timeline and the availability checker,
+> - the advanced administration panel,
+> - Phase 5 of the implementation plan.
+>
+> Before you use these sections, check the code.
+
 ## Table of Contents
 
 - [Overview](#overview)
@@ -71,7 +90,9 @@ In CalDAV, every principal (user or resource) is identified by a `mailto:` URI i
 
 When SabreDAV receives a scheduling request for `mailto:c_a1b2c3d4@resource.calendar.example.com`, it looks up the `email` column in the `principals` table. If a matching principal is found locally, the iTIP message is delivered **internally** (inbox-to-inbox on the same server). See [Email Safety](#email-safety) for how outbound emails to resource addresses are prevented.
 
-**Recommended convention**: `{opaque-id}@resource.calendar.{APP_DOMAIN}`
+`ResourceService._resource_email()` generates `{resource-id}@{RESOURCE_EMAIL_DOMAIN}`. If the setting is empty, it uses `resource.invalid` as the domain.
+
+**Recommended value** for `RESOURCE_EMAIL_DOMAIN`: `resource.calendar.{APP_DOMAIN}`
 
 The address uses:
 - An **opaque identifier** (UUID or short hash, prefixed with `c_`) rather than a human-readable slug, so renaming a resource doesn't change its address
@@ -95,9 +116,9 @@ Resource scheduling addresses are **not real mailboxes**. No email should ever b
 
 In the current flow, when a user adds attendees to an event, `HttpCallbackIMipPlugin` POSTs to Django for each attendee, and Django sends an invitation email. Without intervention, Django would attempt to email the resource address.
 
-**Fix 1 (SabreDAV)**: The `ResourceAutoSchedulePlugin` (priority 120) sets `$message->scheduleStatus` on the iTIP message before `HttpCallbackIMipPlugin` runs. The base `IMipPlugin` class skips messages that already have a status set, preventing the callback entirely.
+**Fix 1 (SabreDAV)**: `ResourceAutoSchedulePlugin` handles the `schedule` event at priority 90, before `HttpCallbackIMipPlugin`. When the plugin declines a request (conflict, `decline-always` or cross-org), or leaves it pending in `manual` mode, it returns `false`. This stops event propagation, so the callback does not run. When the plugin accepts a request, propagation continues, and SabreDAV delivers the booking. `HttpCallbackIMipPlugin` does not check `scheduleStatus`. As a result, the callback can still run for an accepted booking.
 
-**Fix 2 (Django, safety net)**: `CalendarInvitationService.send_invitation()` checks if the recipient is a resource address (by checking `calendar_user_type` of the principal or matching the `@resource.calendar.example.com` domain) and skips email sending.
+**Fix 2 (Django, safety net, not implemented yet)**: `CalendarInvitationService.send_invitation()` must check if the recipient is a resource. It can check the `calendar_user_type` of the principal, or the `@resource.calendar.example.com` domain. For a resource, it must not send an email.
 
 Both should be implemented. The plugin is the primary gate; Django is the fallback.
 
@@ -853,11 +874,11 @@ All resource metadata is managed via standard CalDAV protocol:
 
 | Operation | Method | URL |
 |-----------|--------|-----|
-| List all resources | `PROPFIND` | `/api/v1.0/caldav/principals/resources/` |
-| Get resource properties | `PROPFIND` | `/api/v1.0/caldav/principals/resources/{resource-id}/` |
-| Update resource properties | `PROPPATCH` | `/api/v1.0/caldav/principals/resources/{resource-id}/` |
-| Get resource calendar | `PROPFIND` | `/api/v1.0/caldav/calendars/resources/{resource-id}/default/` |
-| Query free/busy | `REPORT` | `/api/v1.0/caldav/calendars/resources/{resource-id}/default/` |
+| List all resources | `PROPFIND` | `/caldav/principals/resources/` |
+| Get resource properties | `PROPFIND` | `/caldav/principals/resources/{resource-id}/` |
+| Update resource properties | `PROPPATCH` | `/caldav/principals/resources/{resource-id}/` |
+| Get resource calendar | `PROPFIND` | `/caldav/calendars/resources/{resource-id}/default/` |
+| Query free/busy | `REPORT` | `/caldav/calendars/resources/{resource-id}/default/` |
 
 The frontend fetches all resource principals with their properties in a single PROPFIND request and filters/sorts client-side. This is the same pattern used for fetching calendars today.
 
@@ -891,10 +912,10 @@ class ResourceAutoSchedulePlugin extends DAV\ServerPlugin
         $mode = $this->getAutoScheduleMode($message->recipient);
 
         switch ($mode) {
-            case 'accept_always':
+            case 'accept-always':
                 $this->acceptInvitation($message);
                 break;
-            case 'decline_always':
+            case 'decline-always':
                 $this->declineInvitation($message);
                 break;
             case 'automatic':

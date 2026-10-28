@@ -9,7 +9,7 @@ The Calendar application is a modern, self-hosted calendar solution that combine
 ```
 ┌─────────────────┐
 │   Frontend      │
-│   (Next.js)     │
+│ (Vite + React)  │
 └────────┬────────┘
          │
          │ HTTP/REST API + CalDAV Protocol
@@ -23,7 +23,7 @@ The Calendar application is a modern, self-hosted calendar solution that combine
 │  └──────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────┐  │
 │  │  CalDAV Proxy                        │  │
-│  │  - /api/v1.0/caldav/*               │  │
+│  │  - /caldav/*                        │  │
 │  │  - /.well-known/caldav              │  │
 │  └──────────────────────────────────────┘  │
 │  ┌──────────────────────────────────────┐  │
@@ -45,7 +45,7 @@ The Calendar application is a modern, self-hosted calendar solution that combine
          │
 ┌────────▼─────────────────────────────────────┐
 │         PostgreSQL Database                  │
-│  - Django models (users, calendars metadata) │
+│  - Django models (users, orgs, channels)     │
 │  - CalDAV server schema (calendar data)      │
 └──────────────────────────────────────────────┘
 ```
@@ -58,18 +58,18 @@ The Django backend serves as the **orchestration layer** and **business logic en
 
 **Primary Responsibilities:**
 - **User Management & Authentication**: OIDC authentication via Keycloak, user profiles, sessions, authorization
-- **Calendar Metadata Management**: Calendar creation/deletion, sharing, visibility settings, display preferences
+- **Calendar Policies**: Entitlement checks for calendar creation and deletion, the organization default sharing level, ICS import, and mailbox calendar provisioning. The CalDAV server stores the calendars.
 - **REST API Layer**: Modern RESTful API for the web frontend (JSON, standard HTTP methods, versioned at `/api/v1.0/`)
 - **CalDAV Proxy**: Proxies CalDAV requests to CalDAV server, handles authentication translation, URL routing, discovery endpoint
-- **Business Logic**: Calendar sharing logic, permission checks, data validation, integration coordination
+- **Business Logic**: Invitation emails, permission checks, data validation, integration coordination
 
 **Data Storage:**
 - User accounts
-- Calendar metadata (name, color, visibility, owner)
-- Sharing relationships
+- Organizations
+- Channels (integration tokens, see [channels.md](channels.md))
 - Application configuration
 
-**Important**: Django does NOT store actual calendar events. Events are stored in the CalDAV server.
+**Important**: Django does not store calendars, events or shares. The CalDAV server stores them.
 
 ### CalDAV Server
 
@@ -82,15 +82,15 @@ The CalDAV server is a **standards-compliant CalDAV server** that handles all ca
 - **Database Schema**: Uses PostgreSQL with its own schema for calendar data
 
 **Authentication Integration:**
-- Uses Apache authentication backend which reads `REMOTE_USER` environment variable
-- Django proxy sets `X-LS-User` header, which the CalDAV server converts to `REMOTE_USER`
+- Uses `ApiKeyAuthBackend`, which reads the user from the `X-LS-User` header
+- Accepts `X-LS-User` only when the request also has a valid `X-LS-Api-Key` header (`CALDAV_OUTBOUND_API_KEY`)
 - All communication is via HTTP - no direct database access from Django
 
-### Frontend (Next.js)
+### Frontend (Vite + React)
 
 The frontend provides the user interface and interacts with both REST API and CalDAV protocol:
 - Modern React-based UI
-- Uses REST API for calendar metadata operations
+- Uses REST API for users, resources, channels, onboarding setup, ICS import and settings
 - Uses CalDAV protocol directly for event operations
 - Supports multiple languages and themes
 
@@ -143,25 +143,24 @@ The decision to use a separate CalDAV server rather than implementing CalDAV dir
 
 ### Creating a Calendar
 
-TODO: should this only be via caldav too?
+The frontend creates calendars directly with the CalDAV protocol:
 
-1. **Frontend** → POST `/api/v1.0/calendars` (REST API)
-2. **Django Backend**: Validates request, creates `Calendar` model, calls CalDAV server to create calendar collection
-3. **CalDAV Server**: Receives MKCALENDAR request, creates calendar collection, returns calendar path
-4. **Django Backend**: Stores CalDAV server path in `Calendar.caldav_path`, returns calendar data to frontend
+1. **Frontend** → MKCALENDAR `/caldav/calendars/users/{email}/{calendar}/` (CalDAV)
+2. **Django Backend**: `CalDAVProxyView` authenticates the user and forwards the request to the CalDAV server with authentication headers
+3. **CalDAV Server**: Creates the calendar collection
 
 ### Creating an Event
 
 Events are created directly via CalDAV protocol:
 
-1. **Frontend** → PUT `/api/v1.0/caldav/{user}/{calendar}/{event_uid}.ics` (CalDAV)
+1. **Frontend** → PUT `/caldav/calendars/users/{email}/{calendar}/{event_uid}.ics` (CalDAV)
 2. **Django Backend**: `CalDAVProxyView` authenticates user, forwards request to CalDAV server with authentication headers
 3. **CalDAV Server**: Receives PUT request with iCalendar data, stores event in calendar collection
 4. **Django Backend**: Forwards CalDAV response to frontend
 
 ### CalDAV Client Access
 
-1. **CalDAV Client** → PROPFIND `/api/v1.0/caldav/` (CalDAV protocol)
+1. **CalDAV Client** → PROPFIND `/caldav/` (CalDAV protocol)
 2. **Django Backend**: Authenticates user via Django session, forwards request to CalDAV server with `X-LS-User` header
 3. **CalDAV Server**: Processes CalDAV request, returns CalDAV response
 4. **Django Backend**: Forwards response to client
@@ -170,27 +169,27 @@ Events are created directly via CalDAV protocol:
 
 ### User Synchronization
 
-Users are automatically created in the CalDAV server when they first access it. The CalDAV server's Apache authentication backend reads the `REMOTE_USER` environment variable, which is set from the `X-LS-User` header sent by Django. No explicit user creation is needed - the CalDAV server will create principals on-demand.
+The CalDAV server creates a user principal automatically on the first access. Its `ApiKeyAuthBackend` reads the user from the `X-LS-User` header that Django sends. Explicit user creation is not necessary.
 
 ### Calendar Creation
 
-When creating a calendar via REST API:
-1. Django creates `Calendar` model with metadata
-2. Django calls CalDAV server via HTTP to create calendar collection
-3. Django stores CalDAV server path in `Calendar.caldav_path`
+Django does not store calendars. The frontend creates them with MKCALENDAR
+through the proxy. During onboarding setup, Django creates calendars with
+`POST /internal-api/calendars/` on the CalDAV server. It authenticates with
+`X-LS-Internal-Api-Key` (`CALDAV_INTERNAL_API_KEY`).
 
 ### Authentication Translation
 
 Django sessions are translated to CalDAV server authentication:
 - Django adds `X-LS-User` header with user email
-- CalDAV server converts `X-LS-User` to `REMOTE_USER` environment variable
-- CalDAV server's Apache authentication backend reads `REMOTE_USER` for authentication
+- Django adds the `X-LS-Api-Key` header with `CALDAV_OUTBOUND_API_KEY`
+- The CalDAV server's `ApiKeyAuthBackend` checks the key and reads `X-LS-User`
 - All communication is via HTTP - no direct database access
 
 ### URL Routing
 
 CalDAV clients expect specific URL patterns. The CalDAV proxy handles path translation:
-- Discovery endpoint at `.well-known/caldav` redirects to `/api/v1.0/caldav/`
+- Discovery endpoint at `.well-known/caldav` redirects to `/caldav/`
 - Proxy forwards requests to CalDAV server with correct paths
 
 ## Database Schema
@@ -199,12 +198,12 @@ Both Django and the CalDAV server use the same PostgreSQL database in a local Do
 
 **Django Schema (public schema):**
 - `calendars_user` - User accounts
-- `caldav_calendar` - Calendar metadata
-- `caldav_calendarshare` - Sharing relationships
+- `calendars_organization` - Organizations
+- `calendars_channel` - Integration channels
 - Other Django app tables
 
-**CalDAV Server Schema (public schema, same database):**
-- `users` - CalDAV server user records (for digest auth, not used with Apache auth)
+**CalDAV Server Schema (`CALDAV_DB_SCHEMA`, `sabre` in development, same database):**
+- `users` - CalDAV server user records (not used, because authentication uses an API key)
 - `principals` - CalDAV server principals
 - `calendars` - Calendar collections
 - `calendarinstances` - Calendar instance metadata

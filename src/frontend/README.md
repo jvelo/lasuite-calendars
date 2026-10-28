@@ -22,7 +22,7 @@ produces `src/routes.gen.ts` as part of `npm run dev` / `npm run build`.
 - `npm run dev` — start the Vite dev server.
 - `npm run build` — type-check and produce a production build in `dist/`.
 - `npm run preview` — preview the production build locally.
-- `npm run test` — run the Jest test suite.
-- `npm run lint` — run ESLint.
+- `npm run test` — run the Vitest test suite.
+- `npm run lint` — type-check, then lint with oxlint.
 - `npm run ts:check` — run TypeScript in `--noEmit` mode.
 - `npm run analyze` — build with the rollup bundle visualizer.

@@ -45,7 +45,7 @@ it can access. This mirrors Messages' `ChannelScopeLevel`.
 
 | `scope_level` | Target FKs | Access | Created via |
 |---|---|---|---|
-| `global` | none required | Any user's calendars | Django admin / CLI only |
+| `global` | none required | Any user's calendars | Django admin only |
 | `user` | `user` (required) | That user's calendars | API or admin |
 | `calendar` | `user` + `caldav_path` (required) | One specific calendar | API or admin |
 
