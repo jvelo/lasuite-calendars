@@ -1,4 +1,6 @@
-import type { IcsDateObject, IcsEvent } from "ts-ics";
+import type { IcsEvent } from "ts-ics";
+
+import { findOverride, isRemovedOccurrence } from "./rsvp-occurrence";
 
 /** A reason that prevents an attendee from answering an invitation. */
 export type RsvpBlocker = "cancelled" | "deleted" | "notAttendee";
@@ -9,17 +11,15 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
   notAttendee: "rsvp.error.notAttendee",
 };
 
-const isSameDate = (value: IcsDateObject, date: Date): boolean =>
-  value.date.getTime() === date.getTime() || value.local?.date.getTime() === date.getTime();
-
 /**
  * Find why an attendee cannot answer an invitation, from the event as
  * the server stores it.
  *
  * Give `occurrenceDate` to check a single occurrence of a recurring
- * event. An occurrence is cancelled when the master excludes it with
- * an EXDATE and no override replaces it, or when its override has
- * STATUS:CANCELLED.
+ * event. An occurrence is cancelled when its override has
+ * STATUS:CANCELLED. Without an override, it is cancelled when the master
+ * no longer generates it: an EXDATE excludes it, or it is outside the
+ * series bounds.
  *
  * Returns null when the attendee can answer.
  */
@@ -37,11 +37,9 @@ export const findRsvpBlocker = (
 
   let target = master;
   if (occurrenceDate) {
-    const override = instances.find(
-      (e) => e.recurrenceId && isSameDate(e.recurrenceId.value, occurrenceDate),
-    );
-    const excluded = master?.exceptionDates?.some((d) => isSameDate(d, occurrenceDate));
-    if (override ? override.status === "CANCELLED" : excluded) return "cancelled";
+    const override = findOverride(instances, occurrenceDate);
+    const removed = !!master && isRemovedOccurrence(master, occurrenceDate);
+    if (override ? override.status === "CANCELLED" : removed) return "cancelled";
     target = override ?? master;
   }
 

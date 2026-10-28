@@ -60,6 +60,21 @@ describe("findRsvpBlocker", () => {
     expect(findRsvpBlocker(events, UID, USER)).toBeNull();
   });
 
+  it("reports an occurrence after the series UNTIL", () => {
+    const events = [
+      recurring({
+        recurrenceRule: { frequency: "DAILY", until: { date: START, type: "DATE-TIME" } },
+      }),
+    ];
+    expect(findRsvpBlocker(events, UID, USER, SECOND)).toBe("cancelled");
+    expect(findRsvpBlocker(events, UID, USER, START)).toBeNull();
+  });
+
+  it("reports an occurrence before the series start", () => {
+    const before = new Date("2026-11-01T09:00:00Z");
+    expect(findRsvpBlocker([recurring()], UID, USER, before)).toBe("cancelled");
+  });
+
   it("matches an EXDATE on its local date", () => {
     const fakeUtc = new Date("2026-11-03T10:00:00Z");
     const events = [

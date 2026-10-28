@@ -10,6 +10,7 @@ import { useAuth } from "@/features/auth/Auth";
 import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster/Toaster";
 import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
 import { findRsvpBlocker, RSVP_BLOCKER_MESSAGE_KEYS, type RsvpBlocker } from "../rsvp-blocker";
+import { buildOccurrenceReply } from "../rsvp-occurrence";
 
 import type {
   EventCalendarEvent,
@@ -750,17 +751,18 @@ export const useSchedulerHandlers = ({
           }
           const blocker = findRsvpBlocker(events, event.uid, userEmail, occurrenceDate);
           if (blocker) return blocker;
-          // Strip RRULE on the override; createOverrideInstance also clears it
-          // defensively, but be explicit so the ICS we pass in is well-formed.
-          const overrideEvent: IcsEvent = {
-            ...event,
-            attendees: event.attendees?.map((att) =>
-              att.email.toLowerCase() === userEmail.toLowerCase()
-                ? { ...att, partstat: status }
-                : att,
-            ),
-            recurrenceRule: undefined,
-          };
+          // Answer on the server copy of the occurrence. The modal event
+          // can hold stale data.
+          const overrideEvent = buildOccurrenceReply(
+            events,
+            event.uid,
+            occurrenceDate,
+            userEmail,
+            status,
+          );
+          if (!overrideEvent) {
+            return { success: false as const, error: "Occurrence not found" };
+          }
           return caldavService.createOverrideInstance(
             eventUrl,
             overrideEvent,
