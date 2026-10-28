@@ -89,7 +89,7 @@ export const CalendarItemMenu = ({
 
     items.push(
       onRemove
-        ? { label: t("calendar.list.removeFromList"), icon: <Trash />, callback: onRemove }
+        ? { label: t("calendar.list.leaveCalendar"), icon: <Trash />, callback: onRemove }
         : { label: t("calendar.list.delete"), icon: <Trash />, callback: onDelete },
     );
 
