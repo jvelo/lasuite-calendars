@@ -761,13 +761,13 @@ export const useSchedulerHandlers = ({
             return { success: false as const, error: "No occurrence date" };
           }
           const instant = toOccurrenceInstant(occurrenceDate, occurrenceValue);
-          // If an override exists, the occurrence exists. Do not search for
-          // an override by date: it can start on a different day.
-          // If no override exists, the server expands the RRULE. The
-          // occurrence exists if the expansion contains its date.
           const instances = events?.filter((e) => e.uid === event.uid) ?? [];
+          // An override counts while it exists. It can start on another
+          // day, so the expansion window below can miss it.
           let scheduled = !!findOverride(instances, instant);
           if (!scheduled) {
+            // The occurrence exists if the server expansion of the RRULE
+            // still contains its date.
             const expanded = await caldavService.fetchOccurrenceDates(eventUrl, event.uid, {
               start: new Date(instant.getTime() - DAY_MS),
               end: new Date(instant.getTime() + DAY_MS),
