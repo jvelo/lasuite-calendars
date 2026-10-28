@@ -1,6 +1,6 @@
 /**
  * DeleteConfirmModal component.
- * Confirms calendar deletion, or removal from the list for a sharee.
+ * Confirms that the owner deletes a calendar, or that a sharee leaves it.
  */
 
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ export const DeleteConfirmModal = ({
   const { t } = useTranslation();
 
   const mode = calendar ? getCalendarDeleteMode(calendar) : "delete";
-  const keyPrefix = mode === "remove" ? "calendar.removeCalendar" : "calendar.deleteCalendar";
+  const keyPrefix = mode === "leave" ? "calendar.leaveCalendar" : "calendar.deleteCalendar";
   const name = calendar?.displayName || "";
 
   return (

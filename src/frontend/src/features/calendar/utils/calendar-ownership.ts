@@ -5,9 +5,9 @@ import type { CalDavCalendar } from "../services/dav/types/caldav-service";
  *
  * - `delete`: the user owns the calendar. Nobody else has access.
  * - `delete-shared`: the user owns the calendar. Other users lose it too.
- * - `remove`: the user is a sharee. Only their own access goes away.
+ * - `leave`: the user is a sharee. Only their own access goes away.
  */
-export type CalendarDeleteMode = "delete" | "delete-shared" | "remove";
+export type CalendarDeleteMode = "delete" | "delete-shared" | "leave";
 
 /**
  * Tell if the current user owns the calendar.
@@ -31,7 +31,7 @@ export const isOwnedCalendar = (calendar: CalDavCalendar): boolean =>
 
 export const getCalendarDeleteMode = (calendar: CalDavCalendar): CalendarDeleteMode => {
   if (!isCalendarOwner(calendar)) {
-    return "remove";
+    return "leave";
   }
   return calendar.sharees?.length ? "delete-shared" : "delete";
 };
