@@ -21,12 +21,12 @@ export const isCalendarOwner = (calendar: CalDavCalendar): boolean =>
   !(calendar.resourcetype ?? []).includes("shared");
 
 /**
- * Tell if the calendar is one of the user's own calendars.
+ * Tell if the calendar goes in the "My calendars" section.
  *
- * A mailbox calendar is a sharee instance. The user acts for the
- * mailbox, so a mailbox calendar counts as one of their own calendars.
+ * This is about display, not ownership. A mailbox calendar is a sharee
+ * instance, but the user acts for the mailbox, so it goes there too.
  */
-export const isOwnedCalendar = (calendar: CalDavCalendar): boolean =>
+export const belongsInMyCalendars = (calendar: CalDavCalendar): boolean =>
   calendar.ownerType === "MAILBOX" || isCalendarOwner(calendar);
 
 export const getCalendarDeleteMode = (calendar: CalDavCalendar): CalendarDeleteMode => {
