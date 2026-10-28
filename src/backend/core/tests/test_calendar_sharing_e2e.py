@@ -3829,7 +3829,9 @@ def _read_sync_managed(client, user_email, cal_uri):
     assert resp.status_code == 207
     root = ET.fromstring(resp.content)
     prop = root.find(".//{http://lasuite.numerique.gouv.fr/ns/}calendar-sync-managed")
-    return prop.text if prop is not None and prop.text else None
+    if prop is None:
+        return None
+    return prop.text or None
 
 
 class TestSyncManagedCalendarDeletion:

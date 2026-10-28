@@ -19,7 +19,7 @@ interface UseCalendarListStateProps {
     options: CalDavCalendarUpdate,
   ) => Promise<{ success: boolean; error?: string }>;
   deleteCalendar: (url: string) => Promise<{ success: boolean; error?: string }>;
-  onDeleteError: (calendar: CalDavCalendar) => void;
+  onDeleteError: () => void;
 }
 
 export const useCalendarListState = ({
@@ -146,15 +146,14 @@ export const useCalendarListState = ({
   }, []);
 
   const handleConfirmDelete = useCallback(async () => {
-    const calendar = deleteState.calendar;
-    if (!calendar) return;
+    if (!deleteState.calendar) return;
 
     setDeleteState((prev) => ({ ...prev, isLoading: true }));
-    const result = await deleteCalendar(calendar.url);
+    const result = await deleteCalendar(deleteState.calendar.url);
     handleCloseDeleteModal();
     if (!result.success) {
       console.error("Failed to delete calendar:", result.error);
-      onDeleteError(calendar);
+      onDeleteError();
     }
   }, [deleteState.calendar, deleteCalendar, handleCloseDeleteModal, onDeleteError]);
 

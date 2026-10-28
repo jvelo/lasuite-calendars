@@ -260,8 +260,7 @@ class MailboxPlugin extends ServerPlugin
      *
      * Messages owns the access of sync-managed sharees. SabreDAV would
      * delete the sharee row, but the next mailbox ACL sync creates it
-     * again. The calendar then comes back in the user's list. A 403
-     * tells the client the truth instead.
+     * again. The calendar then comes back in the user's list.
      */
     public function protectSyncManagedInstance($path)
     {
