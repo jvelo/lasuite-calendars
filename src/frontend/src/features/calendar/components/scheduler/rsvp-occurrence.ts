@@ -1,4 +1,7 @@
+import { extendByRecurrenceRule } from "ts-ics";
 import type { IcsAttendeePartStatusType, IcsDateObject, IcsEvent } from "ts-ics";
+
+import { getEventCalendarAdapter } from "../../services/dav/EventCalendarAdapter";
 
 const instantOf = (value: IcsDateObject): Date => value.local?.date ?? value.date;
 
@@ -29,19 +32,39 @@ const occurrenceOf = (master: IcsEvent, occurrenceDate: Date): IcsEvent => {
 export const findOverride = (instances: IcsEvent[], occurrenceDate: Date): IcsEvent | undefined =>
   instances.find((e) => e.recurrenceId && isSameDate(e.recurrenceId.value, occurrenceDate));
 
+/** Give the wall-clock time of `date` in `timezone`, stored as UTC ("fake UTC"). */
+const toFakeUtc = (date: Date, timezone: string): Date => {
+  const c = getEventCalendarAdapter().getDateComponentsInTimezone(date, timezone);
+  return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hours, c.minutes, c.seconds));
+};
+
+/** Tell if the master generates an occurrence at `occurrenceDate`. */
+const isGenerated = (master: IcsEvent, occurrenceDate: Date): boolean => {
+  const start = instantOf(master.start);
+  const rule = master.recurrenceRule;
+  if (!rule) return start.getTime() === occurrenceDate.getTime();
+
+  // DTSTART and occurrenceDate are fake UTC. With a TZID, UNTIL is real UTC.
+  const tz = master.start.local?.timezone;
+  const until =
+    rule.until &&
+    (rule.until.local?.date ?? (tz ? toFakeUtc(rule.until.date, tz) : rule.until.date));
+  // Stop the expansion just after the occurrence. COUNT still applies.
+  const after = new Date(occurrenceDate.getTime() + 1);
+  const end = until && until < after ? until : after;
+  return extendByRecurrenceRule(
+    { ...rule, until: { type: "DATE-TIME", date: end } },
+    { start, end },
+  ).some((d) => d.getTime() === occurrenceDate.getTime());
+};
+
 /**
  * Tell if the master no longer generates the occurrence at `occurrenceDate`.
- * This is the case when an EXDATE excludes it, or when it is before DTSTART
- * or after the RRULE UNTIL.
+ * This is the case when the RRULE does not produce it, or an EXDATE excludes it.
  */
-export const isRemovedOccurrence = (master: IcsEvent, occurrenceDate: Date): boolean => {
-  const until = master.recurrenceRule?.until;
-  return (
-    occurrenceDate < instantOf(master.start) ||
-    (!!until && occurrenceDate > instantOf(until)) ||
-    !!master.exceptionDates?.some((d) => isSameDate(d, occurrenceDate))
-  );
-};
+export const isRemovedOccurrence = (master: IcsEvent, occurrenceDate: Date): boolean =>
+  !isGenerated(master, occurrenceDate) ||
+  !!master.exceptionDates?.some((d) => isSameDate(d, occurrenceDate));
 
 /**
  * Build the override that answers one occurrence, from the server copy

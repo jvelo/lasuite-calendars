@@ -18,8 +18,8 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
  * Give `occurrenceDate` to check a single occurrence of a recurring
  * event. An occurrence is cancelled when its override has
  * STATUS:CANCELLED. Without an override, it is cancelled when the master
- * no longer generates it: an EXDATE excludes it, or it is outside the
- * series bounds.
+ * no longer generates it: the RRULE does not produce it, or an EXDATE
+ * excludes it.
  *
  * Returns null when the attendee can answer.
  */

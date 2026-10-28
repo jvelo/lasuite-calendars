@@ -75,6 +75,43 @@ describe("findRsvpBlocker", () => {
     expect(findRsvpBlocker([recurring()], UID, USER, before)).toBe("cancelled");
   });
 
+  it("reports an occurrence after the series COUNT", () => {
+    const events = [recurring({ recurrenceRule: { frequency: "DAILY", count: 1 } })];
+    expect(findRsvpBlocker(events, UID, USER, SECOND)).toBe("cancelled");
+    expect(findRsvpBlocker(events, UID, USER, START)).toBeNull();
+  });
+
+  it("reports a day that a weekly BYDAY rule skips", () => {
+    // 2026-11-02 is a Monday.
+    const events = [
+      recurring({
+        recurrenceRule: { frequency: "WEEKLY", byDay: [{ day: "MO" }, { day: "WE" }] },
+      }),
+    ];
+    expect(findRsvpBlocker(events, UID, USER, SECOND)).toBe("cancelled");
+    expect(findRsvpBlocker(events, UID, USER, new Date("2026-11-04T09:00:00Z"))).toBeNull();
+  });
+
+  it("allows the last occurrence of a zoned series with a UTC UNTIL", () => {
+    // 09:00 in Paris is 08:00 UTC. The fake UTC dates hold 09:00.
+    const zoned = (date: Date) => ({
+      date,
+      type: "DATE-TIME" as const,
+      local: { date, timezone: "Europe/Paris", tzoffset: "+0100" },
+    });
+    const events = [
+      recurring({
+        start: zoned(START),
+        recurrenceRule: {
+          frequency: "DAILY",
+          until: { date: new Date("2026-11-03T08:00:00Z"), type: "DATE-TIME" },
+        },
+      }),
+    ];
+    expect(findRsvpBlocker(events, UID, USER, SECOND)).toBeNull();
+    expect(findRsvpBlocker(events, UID, USER, new Date("2026-11-04T09:00:00Z"))).toBe("cancelled");
+  });
+
   it("matches an EXDATE on its local date", () => {
     const fakeUtc = new Date("2026-11-03T10:00:00Z");
     const events = [
