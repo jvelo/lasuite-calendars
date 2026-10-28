@@ -98,10 +98,9 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
     }
   }, [isOpen, calendar]);
 
-  // Re-fetch the calendar to refresh its sharees after a mutation.
-  // ``CS:invite`` rides on the standard calendar fetch, so this is a
-  // single round-trip that keeps the modal in sync. It also refreshes
-  // the calendar list, because the delete dialog reads the sharees there.
+  // After a mutation, refresh the sharees of the modal and the calendar
+  // list. ``CS:invite`` comes with the standard calendar fetch. The
+  // delete dialog reads the sharees from the calendar list.
   const refreshSharees = useCallback(async () => {
     if (!calendar) return;
     const result = await caldavService.fetchCalendar(calendar.url);

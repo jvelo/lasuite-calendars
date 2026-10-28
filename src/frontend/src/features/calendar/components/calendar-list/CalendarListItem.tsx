@@ -13,7 +13,7 @@ import { isCalendarOwner } from "@/features/calendar/utils/calendar-ownership";
 import type { CalendarListItemProps } from "./types";
 
 /**
- * CalendarListItem - Displays an owned or shared calendar.
+ * CalendarListItem - Displays a calendar of the list, owned or shared.
  */
 export const CalendarListItem = ({
   calendar,
@@ -46,9 +46,7 @@ export const CalendarListItem = ({
           checked={isVisible}
           onChange={() => onToggleVisibility(calendar.url)}
           label=""
-          aria-label={t("calendar.list.showCalendar", {
-            name: calendar.displayName || t("calendar.list.unnamed"),
-          })}
+          aria-label={`${t("calendar.list.showCalendar")} ${calendar.displayName || ""}`}
         />
       </div>
       <div className="calendar-list__name-wrapper">
