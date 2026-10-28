@@ -75,7 +75,7 @@ describe("CalDavService ownership detection", () => {
     expect(modes).toEqual({
       private: "delete",
       team: "delete-shared",
-      "from-alice": "remove",
+      "from-alice": "leave",
     });
   });
 });

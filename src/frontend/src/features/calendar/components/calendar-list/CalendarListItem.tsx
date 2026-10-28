@@ -68,7 +68,7 @@ export const CalendarListItem = ({
           onOpenChange={(open) => (open ? onMenuToggle(calendar.url) : onCloseMenu())}
           onEdit={() => onEdit(calendar)}
           onDelete={isOwner ? () => onDelete(calendar) : undefined}
-          onRemove={isOwner ? undefined : () => onDelete(calendar)}
+          onLeave={isOwner ? undefined : () => onDelete(calendar)}
           onShare={onShare ? () => onShare(calendar) : undefined}
           onImport={onImport ? () => onImport(calendar) : undefined}
           onSubscription={onSubscription ? () => onSubscription(calendar) : undefined}
