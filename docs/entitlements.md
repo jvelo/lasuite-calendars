@@ -81,7 +81,7 @@ Calendars checks two entitlements:
 
    Known limitation: a sharee leaves a shared calendar with a `DELETE`
    on their own calendar instance. This is a collection `DELETE`, so a
-   non-entitled sharee cannot remove a shared calendar from their list.
+   non-entitled sharee cannot leave a shared calendar.
    The frontend sends non-entitled users to `/no-access`, so this
    mainly affects external CalDAV clients.
 5. **Import events** (`core/api/viewsets.py`): Blocks

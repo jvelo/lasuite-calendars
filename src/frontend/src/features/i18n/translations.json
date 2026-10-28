@@ -394,7 +394,7 @@
           "confirm": "Delete",
           "sharedWarning": "This calendar is shared. It will be deleted for every person it is shared with."
         },
-        "removeCalendar": {
+        "leaveCalendar": {
           "title": "Leave this calendar",
           "message": "Leave \"{{name}}\"? You lose access to this calendar. Only its owner can share it with you again. The calendar and the access of other people do not change.",
           "confirm": "Leave"
@@ -1359,7 +1359,7 @@
           "confirm": "Supprimer",
           "sharedWarning": "Ce calendrier est partagé. Il sera supprimé pour toutes les personnes avec qui il est partagé."
         },
-        "removeCalendar": {
+        "leaveCalendar": {
           "title": "Quitter ce calendrier",
           "message": "Quitter \"{{name}}\" ? Vous perdez l'accès à ce calendrier. Seul son propriétaire peut le partager à nouveau avec vous. Le calendrier et l'accès des autres personnes ne changent pas.",
           "confirm": "Quitter"
@@ -2071,7 +2071,7 @@
           "confirm": "Verwijderen",
           "sharedWarning": "Deze kalender is gedeeld. Hij wordt verwijderd voor iedereen met wie hij is gedeeld."
         },
-        "removeCalendar": {
+        "leaveCalendar": {
           "title": "Deze kalender verlaten",
           "message": "\"{{name}}\" verlaten? U verliest de toegang tot deze kalender. Alleen de eigenaar kan hem opnieuw met u delen. De kalender en de toegang van andere personen veranderen niet.",
           "confirm": "Verlaten"

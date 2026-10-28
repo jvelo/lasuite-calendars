@@ -35,6 +35,12 @@ describe("isCalendarOwner", () => {
 });
 
 describe("getCalendarDeleteMode", () => {
+  const sharee = {
+    href: "mailto:bob@example.com",
+    privilege: "read" as const,
+    status: "accepted" as const,
+  };
+
   it("returns delete for an owner without sharees", () => {
     expect(getCalendarDeleteMode(calendar({ resourcetype: ["calendar", "sharedOwner"] }))).toBe(
       "delete",
@@ -42,11 +48,6 @@ describe("getCalendarDeleteMode", () => {
   });
 
   it("returns delete-shared for an owner with sharees", () => {
-    const sharee = {
-      href: "mailto:bob@example.com",
-      privilege: "read" as const,
-      status: "accepted" as const,
-    };
     expect(
       getCalendarDeleteMode(
         calendar({ resourcetype: ["calendar", "sharedOwner"], sharees: [sharee] }),
@@ -54,15 +55,10 @@ describe("getCalendarDeleteMode", () => {
     ).toBe("delete-shared");
   });
 
-  it("returns remove for a sharee, even when other sharees exist", () => {
-    const sharee = {
-      href: "mailto:bob@example.com",
-      privilege: "read" as const,
-      status: "accepted" as const,
-    };
+  it("returns leave for a sharee, even when other sharees exist", () => {
     expect(
       getCalendarDeleteMode(calendar({ resourcetype: ["calendar", "shared"], sharees: [sharee] })),
-    ).toBe("remove");
+    ).toBe("leave");
   });
 });
 
