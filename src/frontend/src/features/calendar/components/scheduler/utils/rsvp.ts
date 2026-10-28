@@ -5,7 +5,7 @@ import { getEventCalendarAdapter } from "../../../services/dav/EventCalendarAdap
 
 /**
  * Give the wall-clock time of `date` in `timezone`. The result stores
- * that time in UTC fields, so 10:00 in Paris becomes 10:00Z.
+ * that time in UTC fields ("fake UTC"), so 10:00 in Paris becomes 10:00Z.
  */
 const toWallClock = (date: Date, timezone: string): Date => {
   const c = getEventCalendarAdapter().getDateComponentsInTimezone(date, timezone);
