@@ -686,8 +686,8 @@ export const useSchedulerHandlers = ({
    * Each attempt first reads the event from the server. The copy in the
    * modal can be stale: the organizer may have cancelled or deleted the
    * event, or removed the user, since the grid loaded. Writing that copy
-   * back would restore the event. When the server copy shows that the
-   * user cannot answer, no write happens and a toast tells why.
+   * back would restore the event. If the server copy shows that the
+   * user cannot answer, the handler does not write and shows the reason.
    *
    * For non-recurring events (or option === "all" / undefined) the change is
    * applied to the master VEVENT via respondToMeeting — SabreDAV detects the
@@ -786,6 +786,9 @@ export const useSchedulerHandlers = ({
         if (typeof outcome !== "string" && !outcome.success && outcome.status === 412) {
           outcome = await attempt();
         }
+        if (typeof outcome !== "string" && !outcome.success) {
+          throw new Error(outcome.error || "Failed to respond to invitation");
+        }
       } catch (error) {
         addErrorToast(t("rsvp.failed"));
         console.error("Error responding to invitation:", error);
@@ -796,13 +799,6 @@ export const useSchedulerHandlers = ({
         addErrorToast(t(RSVP_BLOCKER_MESSAGE_KEYS[outcome]));
         calendarRef.current?.refetchEvents();
         throw new Error(`Cannot respond to invitation: ${outcome}`);
-      }
-
-      if (!outcome.success) {
-        addErrorToast(t("rsvp.failed"));
-        const error = new Error(outcome.error || "Failed to respond to invitation");
-        console.error("Error responding to invitation:", error);
-        throw error;
       }
 
       addSuccessToast(t("rsvp.responseSent"));

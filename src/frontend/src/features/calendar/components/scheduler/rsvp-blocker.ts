@@ -41,8 +41,7 @@ export const findRsvpBlocker = (
       (e) => e.recurrenceId && isSameDate(e.recurrenceId.value, occurrenceDate),
     );
     const excluded = master?.exceptionDates?.some((d) => isSameDate(d, occurrenceDate));
-    if (!override && excluded) return "cancelled";
-    if (override?.status === "CANCELLED") return "cancelled";
+    if (override ? override.status === "CANCELLED" : excluded) return "cancelled";
     target = override ?? master;
   }
 

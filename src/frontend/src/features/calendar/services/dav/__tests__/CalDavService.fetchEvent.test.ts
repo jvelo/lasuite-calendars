@@ -1,6 +1,6 @@
 /**
- * CalDavService.fetchEvent keeps the HTTP status on failure. Callers
- * use a 404 to know that the event no longer exists.
+ * CalDavService.fetchEvent keeps the HTTP status on failure, so a 404
+ * shows that the event no longer exists.
  */
 import type { Mock } from "vitest";
 import { CalDavService } from "../CalDavService";
