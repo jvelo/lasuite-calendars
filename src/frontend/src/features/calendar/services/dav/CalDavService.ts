@@ -889,7 +889,7 @@ export class CalDavService {
       const result = await davRequest({
         url: getCalendarUrlFromEventUrl(eventUrl),
         method: "REPORT",
-        body: buildCalendarQueryXml({ timeRange, expand: true }),
+        body: buildCalendarQueryXml({ timeRange, expand: true, uid }),
         depth: "1",
       });
       if (!result.success || !result.responses) {
