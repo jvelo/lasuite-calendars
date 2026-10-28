@@ -685,11 +685,9 @@ export const useSchedulerHandlers = ({
   /**
    * Handle respond to invitation.
    *
-   * Each attempt first reads the event from the server. The copy in the
-   * modal can be stale: the organizer may have cancelled or deleted the
-   * event, or removed the user, since the grid loaded. Writing that copy
-   * back would restore the event. If the server copy shows that the
-   * user cannot answer, the handler does not write and shows the reason.
+   * Each attempt reads the event from the server first. The modal copy can
+   * be stale, and writing it back can restore a cancelled event. If the
+   * server copy blocks the answer, the handler shows why and does not write.
    *
    * For non-recurring events (or option === "all" / undefined) the change is
    * applied to the master VEVENT via respondToMeeting — SabreDAV detects the
