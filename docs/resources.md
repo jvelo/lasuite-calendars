@@ -116,7 +116,7 @@ Resource scheduling addresses are **not real mailboxes**. No email should ever b
 
 In the current flow, when a user adds attendees to an event, `HttpCallbackIMipPlugin` POSTs to Django for each attendee, and Django sends an invitation email. Without intervention, Django would attempt to email the resource address.
 
-**Fix 1 (SabreDAV)**: `ResourceAutoSchedulePlugin` handles the `schedule` event at priority 90, before `HttpCallbackIMipPlugin`. When the plugin declines a request (conflict, `decline-always`, `manual` or cross-org), it returns `false`. This stops event propagation, so the callback does not run. When the plugin accepts a request, propagation continues, and SabreDAV delivers the booking. `HttpCallbackIMipPlugin` does not check `scheduleStatus`. As a result, the callback can still run for an accepted booking.
+**Fix 1 (SabreDAV)**: `ResourceAutoSchedulePlugin` handles the `schedule` event at priority 90, before `HttpCallbackIMipPlugin`. When the plugin declines a request (conflict, `decline-always` or cross-org), or leaves it pending in `manual` mode, it returns `false`. This stops event propagation, so the callback does not run. When the plugin accepts a request, propagation continues, and SabreDAV delivers the booking. `HttpCallbackIMipPlugin` does not check `scheduleStatus`. As a result, the callback can still run for an accepted booking.
 
 **Fix 2 (Django, safety net, not implemented yet)**: `CalendarInvitationService.send_invitation()` must check if the recipient is a resource. It can check the `calendar_user_type` of the principal, or the `@resource.calendar.example.com` domain. For a resource, it must not send an email.
 

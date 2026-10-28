@@ -396,4 +396,8 @@ MESSAGES_API_KEY=<shared-secret>      # Sent as X-API-Key header
 MESSAGES_CHANNEL_ID=<channel-id>      # Sent as X-Channel-Id header
 ```
 
-On the Messages side, the same secret is configured as `CALENDARS_API_KEY`.
+On the Messages side, a superadmin creates a global `api_key` channel
+for Calendars. The channel needs the mailboxes read scope and the
+messages send scope. Messages shows the API key only once, at creation.
+Set the channel id as `MESSAGES_CHANNEL_ID` and the key as
+`MESSAGES_API_KEY`.

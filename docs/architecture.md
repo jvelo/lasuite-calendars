@@ -45,7 +45,7 @@ The Calendar application is a modern, self-hosted calendar solution that combine
          │
 ┌────────▼─────────────────────────────────────┐
 │         PostgreSQL Database                  │
-│  - Django models (users, calendars metadata) │
+│  - Django models (users, orgs, channels)     │
 │  - CalDAV server schema (calendar data)      │
 └──────────────────────────────────────────────┘
 ```
