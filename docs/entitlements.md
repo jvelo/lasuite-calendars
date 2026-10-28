@@ -69,10 +69,13 @@ Calendars checks two entitlements:
    exposes `can_access` as a field on `GET /users/me/`. Fail-closed:
    returns `False` when entitlements are unavailable.
 3. **CalDAV proxy** (`core/api/viewsets_caldav.py`): Blocks
-   `MKCALENDAR` and `MKCOL` methods for non-entitled users.
-   Other methods (PROPFIND, REPORT, GET, PUT, DELETE) are allowed
-   so that users invited to shared calendars can still use them.
-   Fail-closed: denies creation when entitlements are unavailable.
+   calendar management for non-entitled users: `MKCALENDAR`,
+   `MKCOL`, and `DELETE` or `MOVE` on a calendar collection.
+   Event-level methods (PROPFIND, REPORT, GET, PUT, and DELETE or
+   MOVE on an `.ics` object) stay allowed. Users invited to shared
+   calendars can still use them. A user who loses the entitlement
+   can still remove events. Fail-closed: denies calendar management
+   when entitlements are unavailable.
 4. **Import events** (`core/api/viewsets.py`): Blocks
    `POST /calendars/import-events/` for non-entitled users.
    Fail-closed: denies import when entitlements are unavailable.
@@ -87,11 +90,10 @@ Calendars checks two entitlements:
   login succeeds and the cache warming is skipped.
 - **User API is fail-closed**: if the entitlements service is
   unavailable, `can_access` defaults to `False`.
-- **Calendar creation is fail-closed**: if the entitlements service
-  is unavailable, the CalDAV proxy denies `MKCALENDAR`.
-- **CalDAV proxy MKCALENDAR/MKCOL is fail-closed**: if the
-  entitlements service is unavailable, calendar creation via CalDAV
-  is denied (returns 403).
+- **CalDAV calendar management is fail-closed**: if the
+  entitlements service is unavailable, the CalDAV proxy denies
+  `MKCALENDAR`, `MKCOL`, and collection `DELETE` or `MOVE`
+  (returns 403).
 - **Import events is fail-closed**: if the entitlements service is
   unavailable, ICS import is denied (returns 403).
 - **Resource provisioning is fail-closed**: if the entitlements

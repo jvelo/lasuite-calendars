@@ -2,10 +2,24 @@
 
 This document describes the design and implementation plan for **calendar resources** in La Suite Calendars: meeting rooms, vehicles, projectors, and any other bookable assets that people can reserve alongside events.
 
-> **Note**: this document started as a design document. Some sections
-> describe planned behavior that is not implemented yet: resource
-> metadata, sharing and delegation, the frontend components and the
-> implementation plan. Before you use these sections, check the code.
+> **Note**: this document started as a design document. The code
+> implements these parts:
+> - the Django provisioning API (create and delete),
+> - the resource principals and `ResourceAutoSchedulePlugin` in
+>   SabreDAV,
+> - the resource picker in the event modal,
+> - the `/resources` page (list, search, filter by type, create and
+>   delete), behind the `FEATURE_ADMIN_RESOURCES` flag.
+>
+> These parts describe planned behavior that is not implemented yet:
+> - resource metadata (capacity, location, tags),
+> - sharing and delegation,
+> - the other resource directory filters, the resource detail panel,
+>   the resource timeline and the availability checker,
+> - the advanced administration panel,
+> - Phase 5 of the implementation plan.
+>
+> Before you use these sections, check the code.
 
 ## Table of Contents
 
@@ -102,7 +116,7 @@ Resource scheduling addresses are **not real mailboxes**. No email should ever b
 
 In the current flow, when a user adds attendees to an event, `HttpCallbackIMipPlugin` POSTs to Django for each attendee, and Django sends an invitation email. Without intervention, Django would attempt to email the resource address.
 
-**Fix 1 (SabreDAV)**: `ResourceAutoSchedulePlugin` handles the `schedule` event at priority 90, before `HttpCallbackIMipPlugin`. When the plugin declines a request (conflict, `decline-always`, `manual` or cross-org), it returns `false`. This stops event propagation, so the callback does not run. When the plugin accepts a request, propagation continues, and SabreDAV delivers the booking. `HttpCallbackIMipPlugin` does not check `scheduleStatus`. Thus the callback can still run for an accepted booking.
+**Fix 1 (SabreDAV)**: `ResourceAutoSchedulePlugin` handles the `schedule` event at priority 90, before `HttpCallbackIMipPlugin`. When the plugin declines a request (conflict, `decline-always`, `manual` or cross-org), it returns `false`. This stops event propagation, so the callback does not run. When the plugin accepts a request, propagation continues, and SabreDAV delivers the booking. `HttpCallbackIMipPlugin` does not check `scheduleStatus`. As a result, the callback can still run for an accepted booking.
 
 **Fix 2 (Django, safety net, not implemented yet)**: `CalendarInvitationService.send_invitation()` must check if the recipient is a resource. It can check the `calendar_user_type` of the principal, or the `@resource.calendar.example.com` domain. For a resource, it must not send an email.
 

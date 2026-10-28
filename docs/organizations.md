@@ -275,13 +275,13 @@ class PrincipalBackend extends \Sabre\DAVACL\PrincipalBackend\PDO
 | `searchPrincipals()` | Yes | Used for user/resource discovery |
 | `getPrincipalsByPrefix()` | Yes | Used for listing principals |
 | `getPrincipalByPath()` | **No** | Used for sharing and scheduling with a specific principal — must work cross-org |
-| Schedule outbox free/busy | **No** | Not filtered by org. `FreeBusyOrgScopePlugin` blocks it only when the org sharing level is `none` |
-| `free-busy-query` on a specific calendar | Yes | `FreeBusyOrgScopePlugin` blocks it on calendars owned by users in another org |
+| Schedule outbox free/busy | **No** | No org filter. `FreeBusyOrgScopePlugin` blocks it only when the org sharing level is `none` |
+| `free-busy-query` on a specific calendar | Yes | `FreeBusyOrgScopePlugin` blocks it on the calendars of users in another org |
 
-This keeps principal paths stable (`principals/users/{email}` -- no
-org baked into the URI), enforces scoping at the CalDAV level for
-both web and external clients (Apple Calendar, Thunderbird), and
-allows cross-org sharing to work when explicitly granted.
+Principal paths stay stable: `principals/users/{email}` has no org
+in the URI. SabreDAV enforces the scoping for both web and external
+clients (Apple Calendar, Thunderbird). Cross-org sharing works when
+a user grants it explicitly.
 
 ---
 
@@ -339,9 +339,8 @@ Key points for org scoping of resources:
 2. **Resource discovery** is scoped to the user's org
 3. **Resource creation** requires an org-admin permission
 4. **Resource email addresses** are
-   `{resource-id}@{RESOURCE_EMAIL_DOMAIN}` -- the org is
-   **not** encoded in the email address (see resources.md for
-   rationale)
+   `{resource-id}@{RESOURCE_EMAIL_DOMAIN}`. The address does not
+   contain the org (see resources.md for the rationale)
 5. **No cross-org resource booking** -- the auto-schedule plugin
    rejects invitations from users outside the resource's org
 

@@ -88,9 +88,10 @@ Steps:
    ```
    {APP_URL}/rsvp/?t=<signed>
    ```
-   One link per action (accepted, tentative, declined). Tokens are
-   signed with `django.core.signing.TimestampSigner(salt="rsvp")`
-   and contain `{u: uid, e: email, o: organizer, g: org id, a: action}`.
+   The email has one link per action (accepted, tentative, declined).
+   `django.core.signing.TimestampSigner(salt="rsvp")` signs the token.
+   The token contains
+   `{u: uid, e: email, o: organizer, g: org id, a: action}`.
 4. **ICS attachment** — if `CALENDAR_ITIP_ENABLED=True`, the
    attachment includes `METHOD:REQUEST` for iTIP-aware clients
    (Outlook, Apple Mail). If False (default), the METHOD is stripped
@@ -109,15 +110,15 @@ Attendee clicks Accept / Maybe / Decline link in the email.
 `RSVPConfirmView` handles `/rsvp/`:
 
 1. `GET /rsvp/?t=...` renders a page that sends a POST automatically.
-   Thus link previewers cannot answer for the user.
+   This makes sure that link previewers cannot answer for the user.
 2. `POST /rsvp/` checks the token signature (salt="rsvp")
-3. Calls `POST /internal-api/rsvp/` on SabreDAV, which updates the
-   attendee's `PARTSTAT` to ACCEPTED / TENTATIVE / DECLINED
-4. Renders a confirmation page
+3. The view calls `POST /internal-api/rsvp/` on SabreDAV. SabreDAV
+   sets the attendee's `PARTSTAT` to ACCEPTED, TENTATIVE or DECLINED
+4. The view renders a confirmation page
 
 The internal API writes the event directly to the CalDAV backend.
-SabreDAV scheduling does not run. Thus SabreDAV sends no REPLY, and
-the organizer gets no email.
+SabreDAV scheduling does not run. As a result, SabreDAV sends no
+REPLY and the organizer gets no email.
 
 ### iTIP client response
 

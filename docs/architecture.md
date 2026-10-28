@@ -58,7 +58,7 @@ The Django backend serves as the **orchestration layer** and **business logic en
 
 **Primary Responsibilities:**
 - **User Management & Authentication**: OIDC authentication via Keycloak, user profiles, sessions, authorization
-- **Calendar Policies**: Entitlement checks on calendar creation and deletion, organization default sharing level, ICS import, mailbox calendar provisioning. The calendars stay in the CalDAV server.
+- **Calendar Policies**: Entitlement checks for calendar creation and deletion, the organization default sharing level, ICS import, and mailbox calendar provisioning. The CalDAV server stores the calendars.
 - **REST API Layer**: Modern RESTful API for the web frontend (JSON, standard HTTP methods, versioned at `/api/v1.0/`)
 - **CalDAV Proxy**: Proxies CalDAV requests to CalDAV server, handles authentication translation, URL routing, discovery endpoint
 - **Business Logic**: Invitation emails, permission checks, data validation, integration coordination
@@ -69,7 +69,7 @@ The Django backend serves as the **orchestration layer** and **business logic en
 - Channels (integration tokens, see [channels.md](channels.md))
 - Application configuration
 
-**Important**: Django does NOT store calendars, events or sharing. The CalDAV server stores them.
+**Important**: Django does not store calendars, events or shares. The CalDAV server stores them.
 
 ### CalDAV Server
 
@@ -83,7 +83,7 @@ The CalDAV server is a **standards-compliant CalDAV server** that handles all ca
 
 **Authentication Integration:**
 - Uses `ApiKeyAuthBackend`, which reads the user from the `X-LS-User` header
-- Accepts `X-LS-User` only together with a valid `X-LS-Api-Key` header (`CALDAV_OUTBOUND_API_KEY`)
+- Accepts `X-LS-User` only when the request also has a valid `X-LS-Api-Key` header (`CALDAV_OUTBOUND_API_KEY`)
 - All communication is via HTTP - no direct database access from Django
 
 ### Frontend (Vite + React)
@@ -169,7 +169,7 @@ Events are created directly via CalDAV protocol:
 
 ### User Synchronization
 
-The CalDAV server creates a user principal automatically on first access. Its `ApiKeyAuthBackend` reads the user from the `X-LS-User` header that Django sends. Explicit user creation is not necessary.
+The CalDAV server creates a user principal automatically on the first access. Its `ApiKeyAuthBackend` reads the user from the `X-LS-User` header that Django sends. Explicit user creation is not necessary.
 
 ### Calendar Creation
 
@@ -182,8 +182,8 @@ through the proxy. During onboarding setup, Django creates calendars with
 
 Django sessions are translated to CalDAV server authentication:
 - Django adds `X-LS-User` header with user email
-- Django adds `X-LS-Api-Key` header with `CALDAV_OUTBOUND_API_KEY`
-- CalDAV server's `ApiKeyAuthBackend` checks the key and reads `X-LS-User`
+- Django adds the `X-LS-Api-Key` header with `CALDAV_OUTBOUND_API_KEY`
+- The CalDAV server's `ApiKeyAuthBackend` checks the key and reads `X-LS-User`
 - All communication is via HTTP - no direct database access
 
 ### URL Routing
