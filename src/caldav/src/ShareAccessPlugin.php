@@ -79,9 +79,7 @@ class ShareAccessPlugin extends ServerPlugin
 
     /**
      * Custom DAV property on a calendar instance: "true" when the mailbox
-     * ACL sync manages this instance. Messages controls this access, so
-     * the user cannot delete the instance. A manual share of a mailbox
-     * calendar does not have this property.
+     * ACL sync manages this instance. The user cannot delete it.
      */
     const SYNC_MANAGED_PROP = '{http://lasuite.numerique.gouv.fr/ns/}calendar-sync-managed';
 

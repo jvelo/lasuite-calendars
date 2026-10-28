@@ -93,7 +93,7 @@ export const CalendarItemMenu = ({
         onLeave && !isManagedByMessages ? "calendar.list.leaveCalendar" : "calendar.list.delete",
       ),
       icon: <Trash />,
-      callback: isManagedByMessages ? undefined : (onLeave ?? onDelete),
+      callback: onLeave ?? onDelete,
       isDisabled: isManagedByMessages,
       subText: isManagedByMessages ? t("calendar.list.managedByMessages") : undefined,
     });
