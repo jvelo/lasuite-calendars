@@ -109,8 +109,9 @@ Attendee clicks Accept / Maybe / Decline link in the email.
 
 `RSVPConfirmView` handles `/rsvp/`:
 
-1. `GET /rsvp/?t=...` renders a page that sends a POST automatically.
-   This makes sure that link previewers cannot answer for the user.
+1. `GET /rsvp/?t=...` renders a page that sends the POST with
+   JavaScript. Without JavaScript, the page shows a submit button.
+   GET-only previewers do not submit an RSVP.
 2. `POST /rsvp/` checks the token signature (salt="rsvp")
 3. The view calls `POST /internal-api/rsvp/` on SabreDAV. SabreDAV
    sets the attendee's `PARTSTAT` to ACCEPTED, TENTATIVE or DECLINED

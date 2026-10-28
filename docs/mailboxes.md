@@ -102,8 +102,10 @@ No explicit address sync needed — the share IS the permission.
 
 **The source of truth for mailbox access is always the Messages API.**
 CalDAV shares tagged `sync-managed` are just a cache that gets refreshed
-on every app open. The sync never touches manual shares (shares without
-the `is_sync_managed` flag).
+on every app open. The sync does not delete manual shares (shares
+without the `is_sync_managed` flag). When a Messages share targets the
+same user and calendar as a manual share, the sync takes over that
+share: it sets the access and the `is_sync_managed` flag.
 
 **Recurring background sync**: schedule `sync_all_mailbox_acls` via cron
 (or call the management command periodically). It iterates users with

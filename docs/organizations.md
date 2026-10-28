@@ -276,7 +276,7 @@ class PrincipalBackend extends \Sabre\DAVACL\PrincipalBackend\PDO
 | `getPrincipalsByPrefix()` | Yes | Used for listing principals |
 | `getPrincipalByPath()` | **No** | Used for sharing and scheduling with a specific principal — must work cross-org |
 | Schedule outbox free/busy | **No** | No org filter. `FreeBusyOrgScopePlugin` blocks it only when the org sharing level is `none` |
-| `free-busy-query` on a specific calendar | Yes | `FreeBusyOrgScopePlugin` blocks it on the calendars of users in another org |
+| `free-busy-query` on a specific calendar | Partly | `FreeBusyOrgScopePlugin` checks the user email in the request URL. It blocks requests to the calendar home of a user in another org. Requests to a shared instance in the requester's own calendar home pass |
 
 Principal paths stay stable: `principals/users/{email}` has no org
 in the URI. SabreDAV enforces the scoping for both web and external
@@ -312,8 +312,11 @@ server), SabreDAV creates a principal for that email on demand.
 
 After a share, the recipient can see the events of that calendar,
 in any org. The recipient cannot discover the other calendars of
-the sharer. `FreeBusyOrgScopePlugin` blocks `free-busy-query` on a
-calendar of a user in another org.
+the sharer. `FreeBusyOrgScopePlugin` checks the user email in the
+request URL, not the owner of the calendar. It blocks a
+`free-busy-query` on the owner's URL (`calendars/users/{owner}/...`)
+when the owner is in another org. It allows a `free-busy-query` on
+the shared instance in the recipient's own calendar home.
 
 In the UI, autocomplete results only show same-org users. Manual
 email entry accepts any email.
