@@ -45,6 +45,22 @@ const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
   return { ...moved, recurrenceRule: undefined, exceptionDates: undefined };
 };
 
+/**
+ * Give the occurrence date as the wall-clock time in the timezone of the
+ * series ("fake UTC"). `createOverrideInstance` expects this format. An
+ * all-day date, or a series without timezone, keeps the instant.
+ */
+export const toSeriesWallClock = (
+  events: IcsEvent[] | undefined,
+  uid: string,
+  instant: Date,
+): Date => {
+  const start = events?.find((e) => e.uid === uid && !e.recurrenceId)?.start;
+  return start?.type === "DATE" || !start?.local
+    ? instant
+    : toWallClock(instant, start.local.timezone);
+};
+
 /** Find the override VEVENT whose RECURRENCE-ID is at `instant`. */
 export const findOverride = (instances: IcsEvent[], instant: Date): IcsEvent | undefined =>
   instances.find((e) => e.recurrenceId?.value.date.getTime() === instant.getTime());

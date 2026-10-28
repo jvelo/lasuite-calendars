@@ -15,6 +15,7 @@ import {
   findRsvpBlocker,
   RSVP_BLOCKER_MESSAGE_KEYS,
   toOccurrenceInstant,
+  toSeriesWallClock,
 } from "../utils/rsvp";
 
 import type {
@@ -792,7 +793,7 @@ export const useSchedulerHandlers = ({
           return caldavService.createOverrideInstance(
             eventUrl,
             overrideEvent,
-            occurrenceDate,
+            toSeriesWallClock(events, event.uid, instant),
             etag,
           );
         }

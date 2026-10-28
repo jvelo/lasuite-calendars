@@ -1,4 +1,9 @@
-import { buildOccurrenceReply, findRsvpBlocker, toOccurrenceInstant } from "../utils/rsvp";
+import {
+  buildOccurrenceReply,
+  findRsvpBlocker,
+  toOccurrenceInstant,
+  toSeriesWallClock,
+} from "../utils/rsvp";
 
 import type { IcsEvent } from "ts-ics";
 
@@ -155,5 +160,24 @@ describe("toOccurrenceInstant", () => {
     const day = new Date("2026-11-03T00:00:00Z");
 
     expect(toOccurrenceInstant(day, { date: day, type: "DATE" })).toEqual(day);
+  });
+});
+
+describe("toSeriesWallClock", () => {
+  it("gives the wall-clock time in the series timezone", () => {
+    // A Paris series at 09:00. A UTC browser gives the instant 08:00Z.
+    const paris = master({
+      start: {
+        date: new Date("2026-11-02T08:00:00Z"),
+        type: "DATE-TIME",
+        local: { date: START, timezone: "Europe/Paris", tzoffset: "+0100" },
+      },
+    });
+
+    expect(toSeriesWallClock([paris], UID, new Date("2026-11-03T08:00:00Z"))).toEqual(SECOND);
+  });
+
+  it("keeps the instant for a series without timezone", () => {
+    expect(toSeriesWallClock([master()], UID, SECOND)).toEqual(SECOND);
   });
 });
