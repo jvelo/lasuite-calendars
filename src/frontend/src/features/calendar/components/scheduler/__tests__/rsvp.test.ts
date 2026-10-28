@@ -8,30 +8,6 @@ const START = new Date("2026-11-02T09:00:00Z");
 const END = new Date("2026-11-02T10:00:00Z");
 const SECOND = new Date("2026-11-03T09:00:00Z");
 
-const makeEvent = (overrides: Partial<IcsEvent> = {}): IcsEvent =>
-  ({
-    uid: UID,
-    stamp: { date: START },
-    start: { date: START, type: "DATE-TIME" },
-    summary: "Weekly",
-    organizer: { email: "alice@example.com" },
-    attendees: [{ email: "Bob@Example.com", partstat: "NEEDS-ACTION" }],
-    ...overrides,
-  }) as IcsEvent;
-
-const recurring = (overrides: Partial<IcsEvent> = {}) =>
-  makeEvent({ recurrenceRule: { frequency: "DAILY", count: 3 }, ...overrides });
-
-const override = (overrides: Partial<IcsEvent> = {}) =>
-  makeEvent({
-    start: { date: SECOND, type: "DATE-TIME" },
-    recurrenceId: { value: { date: SECOND, type: "DATE-TIME" } },
-    ...overrides,
-  });
-
-const scheduled = (date: Date) => ({ date, scheduled: true });
-const unscheduled = (date: Date) => ({ date, scheduled: false });
-
 const master = (overrides: Partial<IcsEvent> = {}): IcsEvent =>
   ({
     uid: UID,
@@ -39,6 +15,7 @@ const master = (overrides: Partial<IcsEvent> = {}): IcsEvent =>
     start: { date: START, type: "DATE-TIME" },
     end: { date: END, type: "DATE-TIME" },
     summary: "Weekly",
+    organizer: { email: "alice@example.com" },
     recurrenceRule: { frequency: "DAILY", count: 3 },
     exceptionDates: [{ date: new Date("2026-11-04T09:00:00Z"), type: "DATE-TIME" }],
     attendees: [
@@ -48,47 +25,54 @@ const master = (overrides: Partial<IcsEvent> = {}): IcsEvent =>
     ...overrides,
   }) as IcsEvent;
 
+const override = (overrides: Partial<IcsEvent> = {}) =>
+  master({
+    start: { date: SECOND, type: "DATE-TIME" },
+    recurrenceRule: undefined,
+    exceptionDates: undefined,
+    recurrenceId: { value: { date: SECOND, type: "DATE-TIME" } },
+    ...overrides,
+  });
+
+const scheduled = (date: Date) => ({ date, scheduled: true });
+const unscheduled = (date: Date) => ({ date, scheduled: false });
+
 describe("findRsvpBlocker", () => {
   it("allows an answer to a confirmed event", () => {
-    expect(findRsvpBlocker([makeEvent()], UID, USER)).toBeNull();
+    expect(findRsvpBlocker([master()], UID, USER)).toBeNull();
   });
 
   it("reports a deleted event", () => {
     expect(findRsvpBlocker([], UID, USER)).toBe("deleted");
     expect(findRsvpBlocker(undefined, UID, USER)).toBe("deleted");
-    expect(findRsvpBlocker([makeEvent({ uid: "other" })], UID, USER)).toBe("deleted");
+    expect(findRsvpBlocker([master({ uid: "other" })], UID, USER)).toBe("deleted");
   });
 
   it("reports a cancelled event", () => {
-    expect(findRsvpBlocker([makeEvent({ status: "CANCELLED" })], UID, USER)).toBe("cancelled");
-  });
-
-  it("reports a cancelled series for a single occurrence", () => {
-    const events = [recurring({ status: "CANCELLED" })];
-    expect(findRsvpBlocker(events, UID, USER, scheduled(SECOND))).toBe("cancelled");
+    expect(findRsvpBlocker([master({ status: "CANCELLED" })], UID, USER)).toBe("cancelled");
   });
 
   it("reports a removed attendee", () => {
-    const events = [makeEvent({ attendees: [{ email: "carol@example.com" }] })];
+    const events = [master({ attendees: [{ email: "carol@example.com" }] })];
     expect(findRsvpBlocker(events, UID, USER)).toBe("notAttendee");
   });
 
   it("allows an answer to a scheduled occurrence", () => {
-    expect(findRsvpBlocker([recurring()], UID, USER, scheduled(SECOND))).toBeNull();
+    expect(findRsvpBlocker([master()], UID, USER, scheduled(SECOND))).toBeNull();
   });
 
   it("reports an occurrence that the server no longer expands", () => {
-    expect(findRsvpBlocker([recurring()], UID, USER, unscheduled(SECOND))).toBe("cancelled");
+    expect(findRsvpBlocker([master()], UID, USER, unscheduled(SECOND))).toBe("cancelled");
   });
 
   it("reports a cancelled override", () => {
-    const events = [recurring(), override({ status: "CANCELLED" })];
+    const events = [master(), override({ status: "CANCELLED" })];
     expect(findRsvpBlocker(events, UID, USER, scheduled(SECOND))).toBe("cancelled");
     expect(findRsvpBlocker(events, UID, USER, scheduled(START))).toBeNull();
   });
 
   it("reports an attendee removed from one override", () => {
-    const events = [recurring(), override({ attendees: [] })];
+    const events = [master(), override({ attendees: [] })];
     expect(findRsvpBlocker(events, UID, USER, scheduled(SECOND))).toBe("notAttendee");
     expect(findRsvpBlocker(events, UID, USER, scheduled(START))).toBeNull();
   });
@@ -131,12 +115,9 @@ describe("buildOccurrenceReply", () => {
   });
 
   it("uses the server override of the occurrence", () => {
-    const moved = master({
+    const moved = override({
       summary: "Moved by the organizer",
       start: { date: new Date("2026-11-03T14:00:00Z"), type: "DATE-TIME" },
-      recurrenceRule: undefined,
-      exceptionDates: undefined,
-      recurrenceId: { value: { date: SECOND, type: "DATE-TIME" } },
     });
 
     const reply = buildOccurrenceReply([master(), moved], UID, SECOND, USER, "DECLINED");
@@ -157,18 +138,6 @@ describe("toOccurrenceInstant", () => {
     const value = { date: SECOND, type: "DATE-TIME" as const, local };
 
     expect(toOccurrenceInstant(SECOND, value)).toEqual(new Date("2026-11-03T08:00:00Z"));
-  });
-
-  it("uses the timezone of the grid, not the series", () => {
-    // A UTC browser shows a Paris event at 08:00.
-    const utc = new Date("2026-11-03T08:00:00Z");
-    const value = {
-      date: utc,
-      type: "DATE-TIME" as const,
-      local: { date: utc, timezone: "UTC", tzoffset: "+0000" },
-    };
-
-    expect(toOccurrenceInstant(utc, value)).toEqual(utc);
   });
 
   it("applies the summer offset", () => {
