@@ -13,7 +13,6 @@ import { AppContextProvider, useAppContext } from "@/features/app/AppContext";
 import { AnalyticsProvider } from "@/features/analytics/AnalyticsProvider";
 import { ConfigProvider } from "@/features/config/ConfigProvider";
 import { LeftPanelProvider } from "@/features/layouts/contexts/LeftPanelContext";
-import { OnboardingPromptProvider } from "@/features/calendar/contexts";
 import { APIError, getErrorMessageKey } from "@/features/api/APIError";
 import i18n from "@/features/i18n/initI18n";
 import { toCunninghamLocale } from "@/features/i18n/utils";
@@ -91,9 +90,7 @@ const RootShell = () => {
         <ConfigProvider>
           <AnalyticsProvider>
             <LeftPanelProvider>
-              <OnboardingPromptProvider>
-                <Outlet />
-              </OnboardingPromptProvider>
+              <Outlet />
               <FeedbackFooterMobile />
             </LeftPanelProvider>
           </AnalyticsProvider>

@@ -5,7 +5,8 @@
 
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
-import { useCalendarContext, useOnboardingPrompt } from "../../contexts";
+import { useCalendarContext } from "../../contexts";
+import { useAuth } from "@/features/auth/Auth";
 import { setupCalendar } from "@/features/mailbox/api";
 import { addToast, ToasterItem } from "@/features/ui/components/toaster/Toaster";
 import { CalendarModal } from "./CalendarModal";
@@ -16,6 +17,7 @@ import { SubscriptionUrlModal } from "./SubscriptionUrlModal";
 import { CalendarListItem } from "./CalendarListItem";
 import { useCalendarListState } from "./hooks/useCalendarListState";
 import { extractCaldavPath } from "./utils";
+import { loadOnboardingDismissed, saveOnboardingDismissed } from "../../utils/onboarding-dismissal";
 import { Plus, ChevronDown } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
@@ -63,13 +65,21 @@ export const CalendarList = () => {
   });
 
   // Onboarding: ask the user to create a calendar when they own none.
-  // A user with shared calendars can close the prompt until the page reloads.
-  const onboardingPrompt = useOnboardingPrompt();
+  // A user with shared calendars can close the prompt. The browser
+  // remembers that choice for this user.
+  const { user } = useAuth();
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(
+    () => !!user && loadOnboardingDismissed(user.email),
+  );
+  const dismissOnboarding = () => {
+    setIsOnboardingDismissed(true);
+    if (user) saveOnboardingDismissed(user.email);
+  };
   const canDismissOnboarding = sharedCalendars.length > 0;
   const showOnboarding =
     !isCalendarLoading &&
     ownedCalendars.length === 0 &&
-    !(canDismissOnboarding && onboardingPrompt.dismissed);
+    !(canDismissOnboarding && isOnboardingDismissed);
 
   // Wrap save to handle mailbox calendar creation
   const handleSaveWithMailbox = useCallback(
@@ -262,7 +272,7 @@ export const CalendarList = () => {
       <CalendarModal
         isOpen={showOnboarding}
         mode="create"
-        onClose={onboardingPrompt.dismiss}
+        onClose={dismissOnboarding}
         onSave={handleSaveWithMailbox}
         isOnboarding
         isDismissible={canDismissOnboarding}
