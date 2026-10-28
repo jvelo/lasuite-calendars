@@ -66,7 +66,7 @@ export const CalendarListItem = ({
           onOpenChange={(open) => (open ? onMenuToggle(calendar.url) : onCloseMenu())}
           onEdit={() => onEdit(calendar)}
           onDelete={() => onDelete(calendar)}
-          isManagedByMessages={calendar.syncManaged}
+          syncManaged={calendar.syncManaged}
           onShare={onShare ? () => onShare(calendar) : undefined}
           onImport={onImport ? () => onImport(calendar) : undefined}
           onSubscription={onSubscription ? () => onSubscription(calendar) : undefined}

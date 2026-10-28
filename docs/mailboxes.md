@@ -245,7 +245,8 @@ SabreDAV exposes `LS:calendar-sync-managed` with the value `true` on
 these instances. The frontend uses it to show the delete action as
 disabled, with a note that Messages manages the access. A manual share
 of a mailbox calendar does not have this property, so its sharee can
-delete it.
+delete it. If Messages later gives the sharee access to the mailbox, the
+sync takes control of the share and sets the property.
 
 ### Restriction on MAILBOX calendar sharing
 

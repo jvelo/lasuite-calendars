@@ -58,10 +58,9 @@ export type CalDavCalendar = {
    */
   mailboxEmail?: string;
   /**
-   * True when the mailbox ACL sync manages this calendar instance
-   * (``LS:calendar-sync-managed``). Messages controls this access, so
-   * the user cannot delete the instance. A manual share of a mailbox
-   * calendar is not sync-managed.
+   * Whether Messages manages the access to this calendar instance.
+   * The value comes from ``LS:calendar-sync-managed``. When it is true,
+   * the server refuses to delete the instance.
    */
   syncManaged?: boolean;
   /**

@@ -79,7 +79,7 @@ class ShareAccessPlugin extends ServerPlugin
 
     /**
      * Custom DAV property on a calendar instance: "true" when the mailbox
-     * ACL sync manages this instance. The user cannot delete it.
+     * ACL sync manages this instance.
      */
     const SYNC_MANAGED_PROP = '{http://lasuite.numerique.gouv.fr/ns/}calendar-sync-managed';
 
@@ -389,9 +389,8 @@ class ShareAccessPlugin extends ServerPlugin
     }
 
     /**
-     * Expose whether the mailbox ACL sync manages this calendar instance.
-     *
-     * Value: "true", or null when the instance is not sync-managed.
+     * Expose "true" for a sync-managed calendar instance. For other
+     * instances, the property is not available.
      */
     public function propFindSyncManaged(PropFind $propFind, INode $node)
     {
