@@ -708,9 +708,9 @@ export const useSchedulerHandlers = ({
    * PARTSTAT changed. SabreDAV likewise emits a REPLY scoped to that
    * RECURRENCE-ID.
    *
-   * On a 412 Precondition Failed (the event changed between the read and
-   * the write) we retry once. A second conflict bubbles up as a
-   * user-facing error.
+   * A 412 Precondition Failed means that the event changed between the
+   * read and the write. The handler then tries once more. A second 412
+   * shows an error to the user.
    */
   const handleRespondToInvitation = useCallback(
     async (
@@ -761,9 +761,10 @@ export const useSchedulerHandlers = ({
             return { success: false as const, error: "No occurrence date" };
           }
           const instant = toOccurrenceInstant(occurrenceDate, occurrenceValue);
-          // An override keeps its RECURRENCE-ID but can start on another
-          // day, so it counts while it exists. Without an override, the
-          // server expansion tells if the RRULE still produces the date.
+          // If an override exists, the occurrence exists. Do not search for
+          // an override by date: it can start on a different day.
+          // If no override exists, the server expands the RRULE. The
+          // occurrence exists if the expansion contains its date.
           const instances = events?.filter((e) => e.uid === event.uid) ?? [];
           let scheduled = !!findOverride(instances, instant);
           if (!scheduled) {
@@ -781,8 +782,7 @@ export const useSchedulerHandlers = ({
             scheduled,
           });
           if (blocker) return blocker;
-          // Answer on the server copy of the occurrence. The modal event
-          // can hold stale data.
+          // Build the answer from the server copy. The modal copy can be stale.
           const overrideEvent = buildOccurrenceReply(events, event.uid, instant, userEmail, status);
           if (!overrideEvent) {
             return { success: false as const, error: "Occurrence not found" };
@@ -797,8 +797,8 @@ export const useSchedulerHandlers = ({
 
         const blocker = findRsvpBlocker(events, event.uid, userEmail);
         if (blocker) return blocker;
-        // Answer on the server copy of the master VEVENT. The modal event
-        // can be one occurrence, or hold stale data.
+        // Change the server copy of the master VEVENT. The modal copy can
+        // be one occurrence, or it can be stale.
         const master = events?.find((e) => e.uid === event.uid && !e.recurrenceId);
         if (!master) {
           return { success: false as const, error: "Master event not found" };

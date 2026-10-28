@@ -32,7 +32,7 @@ const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
   local: value.local && { ...value.local, date: toFakeUtc(date, value.local.timezone) },
 });
 
-/** Copy the master to one occurrence. The start and the end move; the rest stays. */
+/** Copy the master to one occurrence. Only the start and the end change. */
 const occurrenceOf = (master: IcsEvent, instant: Date): IcsEvent => {
   const offset = instant.getTime() - master.start.date.getTime();
   const start = moveTo(master.start, instant);
@@ -81,8 +81,8 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
 };
 
 /**
- * Find why an attendee cannot answer an invitation, from the event as
- * the server stores it.
+ * Find why an attendee cannot answer an invitation. `events` is the
+ * server copy of the event.
  *
  * Give `occurrence` to check a single occurrence of a recurring event.
  * `date` is its RECURRENCE-ID in real UTC. `scheduled` tells if the

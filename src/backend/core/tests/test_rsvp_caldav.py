@@ -1,7 +1,7 @@
 """RSVP link tests against the real CalDAV server.
 
-An RSVP must never create or restore an event that the organizer
-cancelled, deleted, or removed the attendee from.
+An RSVP must not change an event that the organizer cancelled or
+deleted. It must not add back an attendee that the organizer removed.
 """
 
 # pylint: disable=missing-function-docstring
