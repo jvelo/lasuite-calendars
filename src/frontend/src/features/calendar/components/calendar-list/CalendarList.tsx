@@ -16,7 +16,6 @@ import { SubscriptionUrlModal } from "./SubscriptionUrlModal";
 import { CalendarListItem } from "./CalendarListItem";
 import { useCalendarListState } from "./hooks/useCalendarListState";
 import { extractCaldavPath } from "./utils";
-import { getOnboardingMode } from "../../utils/onboarding-mode";
 import { Plus, ChevronDown } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
@@ -26,7 +25,6 @@ export const CalendarList = () => {
   const {
     ownedCalendars,
     sharedCalendars,
-    davCalendars,
     visibleCalendarUrls,
     toggleCalendarVisibility,
     createCalendar,
@@ -67,10 +65,11 @@ export const CalendarList = () => {
   // Onboarding: ask the user to create a calendar when they own none.
   // A user with shared calendars can close the prompt for this session.
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(false);
-  const onboardingMode = getOnboardingMode(davCalendars);
+  const canDismissOnboarding = sharedCalendars.length > 0;
   const showOnboarding =
     !isCalendarLoading &&
-    (onboardingMode === "required" || (onboardingMode === "dismissible" && !isOnboardingDismissed));
+    ownedCalendars.length === 0 &&
+    !(canDismissOnboarding && isOnboardingDismissed);
 
   // Wrap save to handle mailbox calendar creation
   const handleSaveWithMailbox = useCallback(
@@ -266,7 +265,7 @@ export const CalendarList = () => {
         onClose={() => setIsOnboardingDismissed(true)}
         onSave={handleSaveWithMailbox}
         isOnboarding
-        isDismissible={onboardingMode === "dismissible"}
+        isDismissible={canDismissOnboarding}
       />
 
       {/* Normal create/edit modal */}
