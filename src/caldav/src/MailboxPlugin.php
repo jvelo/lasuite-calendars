@@ -19,7 +19,7 @@
  *     (runs before Schedule\Plugin at priority 100)
  *   - method:POST (priority 80) — blocks read-write CS:share on MAILBOX
  *     (runs before CalDAV\SharingPlugin at default priority 100)
- *   - beforeUnbind: blocks DELETE of sync-managed calendar instances
+ *   - beforeUnbind: blocks removal of sync-managed calendar instances
  */
 
 namespace Calendars\SabreDav;
@@ -256,11 +256,11 @@ class MailboxPlugin extends ServerPlugin
     }
 
     /**
-     * Refuse a DELETE of a sync-managed calendar instance.
+     * Refuse to remove or replace a sync-managed calendar instance.
      *
-     * Messages owns the access of sync-managed sharees. SabreDAV would
-     * delete the sharee row, but the next mailbox ACL sync creates it
-     * again. The calendar then comes back in the user's list.
+     * beforeUnbind runs for DELETE, MOVE and a COPY that overwrites.
+     * Messages controls the access of these instances. If SabreDAV
+     * removes the instance, the next mailbox ACL sync creates it again.
      */
     public function protectSyncManagedInstance($path)
     {
