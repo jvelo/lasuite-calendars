@@ -1,6 +1,6 @@
 import type { IcsEvent } from "ts-ics";
 
-import { findOverride, isRemovedOccurrence } from "./rsvp-occurrence";
+import { findOverride } from "./rsvp-occurrence";
 
 /** A reason that prevents an attendee from answering an invitation. */
 export type RsvpBlocker = "cancelled" | "deleted" | "notAttendee";
@@ -15,11 +15,10 @@ export const RSVP_BLOCKER_MESSAGE_KEYS: Record<RsvpBlocker, string> = {
  * Find why an attendee cannot answer an invitation, from the event as
  * the server stores it.
  *
- * Give `occurrenceDate` to check a single occurrence of a recurring
- * event. An occurrence is cancelled when its override has
- * STATUS:CANCELLED. Without an override, it is cancelled when the master
- * no longer generates it: the RRULE does not produce it, or an EXDATE
- * excludes it.
+ * Give `occurrence` to check a single occurrence of a recurring event.
+ * `scheduled` tells if the server expansion still holds it. An
+ * occurrence is cancelled when it is not scheduled, or when its override
+ * has STATUS:CANCELLED.
  *
  * Returns null when the attendee can answer.
  */
@@ -27,7 +26,7 @@ export const findRsvpBlocker = (
   events: IcsEvent[] | undefined,
   uid: string,
   attendeeEmail: string,
-  occurrenceDate?: Date,
+  occurrence?: { date: Date; scheduled: boolean },
 ): RsvpBlocker | null => {
   const instances = events?.filter((e) => e.uid === uid) ?? [];
   if (instances.length === 0) return "deleted";
@@ -36,10 +35,9 @@ export const findRsvpBlocker = (
   if (master?.status === "CANCELLED") return "cancelled";
 
   let target = master;
-  if (occurrenceDate) {
-    const override = findOverride(instances, occurrenceDate);
-    const removed = !!master && isRemovedOccurrence(master, occurrenceDate);
-    if (override ? override.status === "CANCELLED" : removed) return "cancelled";
+  if (occurrence) {
+    const override = findOverride(instances, occurrence.date);
+    if (!occurrence.scheduled || override?.status === "CANCELLED") return "cancelled";
     target = override ?? master;
   }
 

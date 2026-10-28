@@ -1,4 +1,3 @@
-import { extendByRecurrenceRule } from "ts-ics";
 import type { IcsAttendeePartStatusType, IcsDateObject, IcsEvent } from "ts-ics";
 
 import { getEventCalendarAdapter } from "../../services/dav/EventCalendarAdapter";
@@ -38,33 +37,24 @@ const toFakeUtc = (date: Date, timezone: string): Date => {
   return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hours, c.minutes, c.seconds));
 };
 
-/** Tell if the master generates an occurrence at `occurrenceDate`. */
-const isGenerated = (master: IcsEvent, occurrenceDate: Date): boolean => {
-  const start = instantOf(master.start);
-  const rule = master.recurrenceRule;
-  if (!rule) return start.getTime() === occurrenceDate.getTime();
-
-  // DTSTART and occurrenceDate are fake UTC. With a TZID, UNTIL is real UTC.
-  const tz = master.start.local?.timezone;
-  const until =
-    rule.until &&
-    (rule.until.local?.date ?? (tz ? toFakeUtc(rule.until.date, tz) : rule.until.date));
-  // Stop the expansion just after the occurrence. COUNT still applies.
-  const after = new Date(occurrenceDate.getTime() + 1);
-  const end = until && until < after ? until : after;
-  return extendByRecurrenceRule(
-    { ...rule, until: { type: "DATE-TIME", date: end } },
-    { start, end },
-  ).some((d) => d.getTime() === occurrenceDate.getTime());
-};
-
 /**
- * Tell if the master no longer generates the occurrence at `occurrenceDate`.
- * This is the case when the RRULE does not produce it, or an EXDATE excludes it.
+ * Tell if the server expansion still holds the occurrence at `occurrenceDate`.
+ *
+ * `expanded` holds real UTC dates. `occurrenceDate` is fake UTC, in the
+ * series timezone. Without a TZID, the browser timezone applies. A date
+ * also matches as is, for all-day series.
  */
-export const isRemovedOccurrence = (master: IcsEvent, occurrenceDate: Date): boolean =>
-  !isGenerated(master, occurrenceDate) ||
-  !!master.exceptionDates?.some((d) => isSameDate(d, occurrenceDate));
+export const isScheduledOccurrence = (
+  events: IcsEvent[] | undefined,
+  uid: string,
+  expanded: Date[],
+  occurrenceDate: Date,
+): boolean => {
+  const master = events?.find((e) => e.uid === uid && !e.recurrenceId);
+  const tz = master?.start.local?.timezone ?? Intl.DateTimeFormat().resolvedOptions().timeZone;
+  const target = occurrenceDate.getTime();
+  return expanded.some((d) => d.getTime() === target || toFakeUtc(d, tz).getTime() === target);
+};
 
 /**
  * Build the override that answers one occurrence, from the server copy

@@ -10,7 +10,7 @@ import { useAuth } from "@/features/auth/Auth";
 import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster/Toaster";
 import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
 import { findRsvpBlocker, RSVP_BLOCKER_MESSAGE_KEYS, type RsvpBlocker } from "../rsvp-blocker";
-import { buildOccurrenceReply } from "../rsvp-occurrence";
+import { buildOccurrenceReply, isScheduledOccurrence } from "../rsvp-occurrence";
 
 import type {
   EventCalendarEvent,
@@ -31,6 +31,7 @@ import type { EventModalState, RecurringDeleteOption, RecurringEditOption } from
 
 // Get browser timezone
 const BROWSER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
+const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Run an etag-guarded write; on a 412 Precondition Failed fetch the
  * latest etag and retry once.
@@ -749,7 +750,20 @@ export const useSchedulerHandlers = ({
           if (!occurrenceDate) {
             return { success: false as const, error: "No occurrence date" };
           }
-          const blocker = findRsvpBlocker(events, event.uid, userEmail, occurrenceDate);
+          // The server expands the RRULE. It is the reference for which
+          // occurrences still exist. A day on each side covers any offset.
+          const expanded = await caldavService.fetchOccurrenceDates(eventUrl, event.uid, {
+            start: new Date(occurrenceDate.getTime() - DAY_MS),
+            end: new Date(occurrenceDate.getTime() + DAY_MS),
+          });
+          if (!expanded.success || !expanded.data) {
+            throw new Error(expanded.error ?? "Failed to expand event");
+          }
+          const scheduled = isScheduledOccurrence(events, event.uid, expanded.data, occurrenceDate);
+          const blocker = findRsvpBlocker(events, event.uid, userEmail, {
+            date: occurrenceDate,
+            scheduled,
+          });
           if (blocker) return blocker;
           // Answer on the server copy of the occurrence. The modal event
           // can hold stale data.

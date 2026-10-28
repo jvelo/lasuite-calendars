@@ -1,4 +1,4 @@
-import { buildOccurrenceReply } from "../rsvp-occurrence";
+import { buildOccurrenceReply, isScheduledOccurrence } from "../rsvp-occurrence";
 
 import type { IcsEvent } from "ts-ics";
 
@@ -75,5 +75,29 @@ describe("buildOccurrenceReply", () => {
 
   it("returns undefined when the server has no VEVENT for the UID", () => {
     expect(buildOccurrenceReply([], UID, SECOND, USER, "ACCEPTED")).toBeUndefined();
+  });
+});
+
+describe("isScheduledOccurrence", () => {
+  it("matches a zoned occurrence against the real UTC expansion", () => {
+    // 09:00 in Paris is 08:00 UTC. The fake UTC occurrence holds 09:00.
+    const zoned = master({
+      start: {
+        date: START,
+        type: "DATE-TIME",
+        local: { date: START, timezone: "Europe/Paris", tzoffset: "+0100" },
+      },
+    });
+    const expanded = [new Date("2026-11-03T08:00:00Z")];
+
+    expect(isScheduledOccurrence([zoned], UID, expanded, SECOND)).toBe(true);
+    expect(isScheduledOccurrence([zoned], UID, [], SECOND)).toBe(false);
+  });
+
+  it("matches an all-day occurrence as is", () => {
+    const day = new Date("2026-11-03T00:00:00Z");
+    const allDay = master({ start: { date: new Date("2026-11-02T00:00:00Z"), type: "DATE" } });
+
+    expect(isScheduledOccurrence([allDay], UID, [day], day)).toBe(true);
   });
 });

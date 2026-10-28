@@ -875,6 +875,34 @@ export class CalDavService {
     }, "Failed to create override instance");
   }
 
+  /**
+   * Fetch the occurrences of an event that the server expands in a time
+   * range. Each date is a RECURRENCE-ID in real UTC, or the start of a
+   * non-recurring event. EXDATEs are already applied.
+   */
+  async fetchOccurrenceDates(
+    eventUrl: string,
+    uid: string,
+    timeRange: { start: Date; end: Date },
+  ): Promise<CalDavResponse<Date[]>> {
+    return asResult(async () => {
+      const result = await davRequest({
+        url: getCalendarUrlFromEventUrl(eventUrl),
+        method: "REPORT",
+        body: buildCalendarQueryXml({ timeRange, expand: true }),
+        depth: "1",
+      });
+      if (!result.success || !result.responses) {
+        throw davFailure(result, "Failed to expand event");
+      }
+      return result.responses
+        .filter((r) => r.ok && r.props?.calendarData)
+        .flatMap((r) => convertIcsCalendar(undefined, r.props?.calendarData as string).events ?? [])
+        .filter((e) => e.uid === uid)
+        .map((e) => e.recurrenceId?.value.date ?? e.start.date);
+    }, "Failed to expand event");
+  }
+
   async fetchEvent(eventUrl: string): Promise<CalDavResponse<CalDavEvent>> {
     return asResult(async () => {
       const result = await davRequest({
