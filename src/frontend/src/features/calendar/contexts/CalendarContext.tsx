@@ -14,7 +14,7 @@ import { EventCalendarAdapter } from "../services/dav/EventCalendarAdapter";
 import { caldavServerUrl } from "../utils/DavClient";
 import { addToast, ToasterItem } from "@/features/ui/components/toaster/Toaster";
 import { useAuth } from "@/features/auth/Auth";
-import { isOwnedCalendar } from "../utils/calendar-ownership";
+import { belongsInMyCalendars } from "../utils/calendar-ownership";
 
 import type {
   CalDavCalendar,
@@ -125,7 +125,7 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     const owned: CalDavCalendar[] = [];
     const shared: CalDavCalendar[] = [];
     for (const cal of davCalendars) {
-      if (isOwnedCalendar(cal)) {
+      if (belongsInMyCalendars(cal)) {
         owned.push(cal);
       } else {
         shared.push(cal);
