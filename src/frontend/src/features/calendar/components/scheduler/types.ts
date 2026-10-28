@@ -24,6 +24,9 @@ export type RecurringDeleteOption = "this" | "future" | "all";
  */
 export type RecurringEditOption = "this" | "future" | "all";
 
+/** A reason that prevents an attendee from answering an invitation. */
+export type RsvpBlocker = "cancelled" | "deleted" | "notAttendee";
+
 /**
  * Props for the EventModal component.
  */

@@ -9,8 +9,13 @@ import { useTranslation } from "react-i18next";
 import { useAuth } from "@/features/auth/Auth";
 import { addErrorToast, addSuccessToast } from "@/features/ui/components/toaster/Toaster";
 import { getCalendarUrlFromEventUrl } from "../../../services/dav/caldav-helpers";
-import { findRsvpBlocker, RSVP_BLOCKER_MESSAGE_KEYS, type RsvpBlocker } from "../rsvp-blocker";
-import { buildOccurrenceReply, findOverride, toOccurrenceInstant } from "../rsvp-occurrence";
+import {
+  buildOccurrenceReply,
+  findOverride,
+  findRsvpBlocker,
+  RSVP_BLOCKER_MESSAGE_KEYS,
+  toOccurrenceInstant,
+} from "../utils/rsvp";
 
 import type {
   EventCalendarEvent,
@@ -27,7 +32,12 @@ import type {
 import type { CalDavService } from "../../../services/dav/CalDavService";
 
 import type { CalDavResponse } from "../../../services/dav/types/caldav-service";
-import type { EventModalState, RecurringDeleteOption, RecurringEditOption } from "../types";
+import type {
+  EventModalState,
+  RecurringDeleteOption,
+  RecurringEditOption,
+  RsvpBlocker,
+} from "../types";
 
 // Get browser timezone
 const BROWSER_TIMEZONE = Intl.DateTimeFormat().resolvedOptions().timeZone;
