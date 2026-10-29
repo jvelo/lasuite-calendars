@@ -1,7 +1,8 @@
 /**
  * CalendarList component - List of calendars with visibility toggles.
- * Prompts users without an owned calendar to create one. Users with
- * shared calendars can dismiss the prompt.
+ * It prompts users without an owned calendar to create one. Users
+ * with shared calendars can dismiss the prompt. Users with no
+ * calendar must create one.
  */
 
 import { useState, useCallback } from "react";
