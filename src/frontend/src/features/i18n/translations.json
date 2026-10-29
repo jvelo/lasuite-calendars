@@ -293,6 +293,7 @@
           "skipped_one": "event skipped (unsupported format)",
           "skipped_other": "events skipped (unsupported format)",
           "error": "An error occurred during import. Please try again.",
+          "invalidFile": "This file is not a valid calendar file (.ics).",
           "errorDetails": "Error details",
           "unnamedEvent": "Event without a title",
           "fileTooLarge": "The file is too large. The maximum size is {{max}} MB."
@@ -1290,6 +1291,7 @@
           "skipped_one": "événement ignoré (format non supporté)",
           "skipped_other": "événements ignorés (format non supporté)",
           "error": "Une erreur est survenue lors de l'importation. Veuillez réessayer.",
+          "invalidFile": "Ce fichier n'est pas un fichier de calendrier valide (.ics).",
           "errorDetails": "Détails des erreurs",
           "unnamedEvent": "Événement sans titre",
           "fileTooLarge": "Le fichier est trop volumineux. La taille maximale est de {{max}} Mo."
@@ -2034,6 +2036,7 @@
           "skipped_one": "evenement overgeslagen (niet-ondersteund formaat)",
           "skipped_other": "evenementen overgeslagen (niet-ondersteund formaat)",
           "error": "Er is een fout opgetreden tijdens het importeren. Probeer het opnieuw.",
+          "invalidFile": "Dit bestand is geen geldig kalenderbestand (.ics).",
           "errorDetails": "Foutdetails",
           "unnamedEvent": "Evenement zonder titel",
           "fileTooLarge": "Het bestand is te groot. De maximale grootte is {{max}} MB."

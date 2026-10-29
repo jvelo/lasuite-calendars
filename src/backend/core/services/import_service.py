@@ -25,6 +25,7 @@ class ImportResult:  # pylint: disable=too-many-instance-attributes
 
     - ``unavailable``: the CalDAV server cannot do the import.
     - ``invalid_calendar``: the calendar path is not valid.
+    - ``invalid_file``: the file is empty or is not valid ICS.
 
     filtered contains titles (SUMMARY, falling back to UID) of events
     that were silently dropped because their component type is not in
@@ -55,6 +56,20 @@ class ICSImportService:
 
     def __init__(self):
         self._http = CalDAVHTTPClient()
+
+    @staticmethod
+    def _failed_import_code(response):
+        """Log a refused SabreDAV import and return its error code."""
+        # SabreDAV returns 400 for an empty body or an ICS parse error.
+        if response.status_code == 400:
+            logger.warning("SabreDAV refused the import file: %s", response.text[:500])
+            return "invalid_file"
+        logger.error(
+            "SabreDAV import returned %s: %s",
+            response.status_code,
+            response.text[:500],
+        )
+        return "unavailable"
 
     def import_events(
         self,
@@ -114,12 +129,7 @@ class ICSImportService:
             return result
 
         if response.status_code != 200:
-            logger.error(
-                "SabreDAV import returned %s: %s",
-                response.status_code,
-                response.text[:500],
-            )
-            result.error_code = "unavailable"
+            result.error_code = self._failed_import_code(response)
             return result
 
         try:
@@ -155,7 +165,7 @@ class ICSImportService:
                 )
                 result.errors.append(err.get("summary") or err.get("uid") or "")
             else:
+                # Not an event error, so it has no name to show.
                 logger.warning("Import failed with an unstructured error: %s", err)
-                result.errors.append("")
 
         return result

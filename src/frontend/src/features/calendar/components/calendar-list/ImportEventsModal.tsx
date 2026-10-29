@@ -140,7 +140,11 @@ export const ImportEventsModal = ({
 
         {hasFailed && (
           <Alert className="app__alert--small" type={VariantType.ERROR} icon={<ErrorFilled />}>
-            {t("calendar.importEvents.error")}
+            {t(
+              result?.error_code === "invalid_file"
+                ? "calendar.importEvents.invalidFile"
+                : "calendar.importEvents.error",
+            )}
           </Alert>
         )}
 
