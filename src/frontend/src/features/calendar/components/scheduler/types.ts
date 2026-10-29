@@ -193,7 +193,7 @@ export interface MobileToolbarProps {
 export interface WeekDayBarProps {
   currentDate: Date;
   currentView: string;
-  intlLocale: string;
+  locale: string;
   weekDays: Date[];
   onDayClick: (date: Date) => void;
 }
@@ -221,6 +221,6 @@ export interface MobileListEvent {
 export interface MobileListViewProps {
   weekDays: Date[];
   events: MobileListEvent[];
-  intlLocale: string;
+  locale: string;
   onEventClick: (eventId: string, extendedProps: Record<string, unknown>) => void;
 }

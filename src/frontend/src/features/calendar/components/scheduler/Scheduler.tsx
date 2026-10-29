@@ -53,7 +53,7 @@ export const Scheduler = ({ defaultCalendarUrl }: SchedulerProps) => {
   } = useCalendarContext();
 
   const isMobile = useIsMobile();
-  const { firstDayOfWeek, intlLocale } = useCalendarLocale();
+  const { firstDayOfWeek, locale } = useCalendarLocale();
 
   const containerRef = useRef<HTMLDivElement>(null);
   const calendarRef = contextCalendarRef;
@@ -335,7 +335,7 @@ export const Scheduler = ({ defaultCalendarUrl }: SchedulerProps) => {
             <WeekDayBar
               currentDate={currentDate}
               currentView={currentView}
-              intlLocale={intlLocale}
+              locale={locale}
               weekDays={weekDays}
               onDayClick={handleDayClick}
             />
@@ -354,7 +354,7 @@ export const Scheduler = ({ defaultCalendarUrl }: SchedulerProps) => {
         <MobileListView
           weekDays={weekDays}
           events={listEvents}
-          intlLocale={intlLocale}
+          locale={locale}
           onEventClick={handleMobileEventClick}
         />
       )}

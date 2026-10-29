@@ -30,33 +30,28 @@ function groupEventsByDay(
   return grouped;
 }
 
-export const MobileListView = ({
-  weekDays,
-  events,
-  intlLocale,
-  onEventClick,
-}: MobileListViewProps) => {
+export const MobileListView = ({ weekDays, events, locale, onEventClick }: MobileListViewProps) => {
   const { t } = useTranslation();
 
   const eventsByDay = useMemo(() => groupEventsByDay(events, weekDays), [events, weekDays]);
 
   const dayHeaderFormatter = useMemo(
     () =>
-      new Intl.DateTimeFormat(intlLocale, {
+      new Intl.DateTimeFormat(locale, {
         weekday: "long",
         day: "numeric",
         month: "long",
       }),
-    [intlLocale],
+    [locale],
   );
 
   const timeFormatter = useMemo(
     () =>
-      new Intl.DateTimeFormat(intlLocale, {
+      new Intl.DateTimeFormat(locale, {
         hour: "numeric",
         minute: "2-digit",
       }),
-    [intlLocale],
+    [locale],
   );
 
   return (
