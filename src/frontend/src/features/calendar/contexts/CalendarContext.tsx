@@ -142,6 +142,8 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     [ownedCalendars, sharedCalendars],
   );
 
+  // A failed refresh keeps the calendars of the last fetch. An empty list
+  // would show the onboarding, as if the user had no calendar.
   const refreshCalendars = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -160,8 +162,6 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
             {t("calendar.error.fetchCalendars")}
           </ToasterItem>,
         );
-        setDavCalendars([]);
-        setVisibleCalendarUrls(new Set());
       }
     } catch (error) {
       console.error("Error loading calendars:", error);
@@ -170,8 +170,6 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
           {t("calendar.error.fetchCalendars")}
         </ToasterItem>,
       );
-      setDavCalendars([]);
-      setVisibleCalendarUrls(new Set());
     } finally {
       setIsLoading(false);
     }
