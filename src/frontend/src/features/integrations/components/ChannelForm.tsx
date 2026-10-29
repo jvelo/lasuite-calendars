@@ -5,6 +5,9 @@ import { Retry } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { ChannelScopeValue } from "../types";
 
+// Same limit as the `name` field of the channel API.
+const NAME_MAX_LENGTH = 255;
+
 type ChannelFormProps = {
   name: string;
   onNameChange: (name: string) => void;
@@ -41,6 +44,7 @@ export const ChannelForm = ({
         label={t("integrations.create.nameLabel")}
         value={name}
         onChange={(e) => onNameChange((e.target as HTMLInputElement).value)}
+        maxLength={NAME_MAX_LENGTH}
         fullWidth
         disabled={disabled}
       />
