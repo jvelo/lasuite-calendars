@@ -840,14 +840,15 @@ class InternalApiPlugin extends ServerPlugin
             $response->setBody(json_encode(['error' => 'Calendar not found']));
             return false;
         }
-        $calendarId = $calendarInfo['id'];
+        // SabreDAV calendar ids are [calendarId, instanceId] pairs.
+        $calendarId = $calendarInfo['id'][0];
 
         // Resolve the owner instance to verify this is really a
         // MAILBOX-owned calendar belonging to the mailbox Django
         // already checked the caller's role against.
         try {
             $stmt = $this->pdo->prepare(
-                'SELECT p.email, p.calendar_user_type, p.org_id'
+                'SELECT ci.id AS instance_id, p.email, p.calendar_user_type, p.org_id'
                 . ' FROM calendarinstances ci'
                 . ' JOIN principals p ON p.uri = ci.principaluri'
                 . ' WHERE ci.calendarid = ? AND ci.access = 1'
@@ -893,7 +894,9 @@ class InternalApiPlugin extends ServerPlugin
         // and every calendarinstances row (owner + every sharee) for
         // this calendarid — not just the caller's own row.
         try {
-            $this->caldavBackend->deleteCalendar($calendarId);
+            // Pass the owner instance: SabreDAV deletes only the given
+            // instance when it is not the owner instance.
+            $this->caldavBackend->deleteCalendar([$calendarId, (int) $owner['instance_id']]);
         } catch (\Exception $e) {
             error_log('[InternalApiPlugin] Failed to delete mailbox calendar: ' . $e->getMessage());
             $response->setStatus(500);
