@@ -11,6 +11,14 @@ describe("fetchAPI", () => {
     await expect(fetchAPI("users/")).rejects.toBeInstanceOf(NetworkError);
   });
 
+  it("does not throw a NetworkError for a malformed request", async () => {
+    vi.stubGlobal("fetch", vi.fn());
+    const error = await fetchAPI("users/", { method: "GET", body: "{}" }).catch((e) => e);
+    expect(error).toBeInstanceOf(TypeError);
+    expect(error).not.toBeInstanceOf(NetworkError);
+    expect(fetch).not.toHaveBeenCalled();
+  });
+
   it("throws an APIError for an error response", async () => {
     vi.stubGlobal(
       "fetch",
