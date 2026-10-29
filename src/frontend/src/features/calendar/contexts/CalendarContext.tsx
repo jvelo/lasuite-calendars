@@ -74,7 +74,7 @@ export interface CalendarContextType {
     calendarUrl: string,
     email: string,
     privilege?: SharePrivilege,
-  ) => Promise<{ success: boolean; error?: string }>;
+  ) => Promise<{ success: boolean; error?: string; status?: number }>;
   moveCalendar: (
     calendarUrl: string,
     direction: "up" | "down",
@@ -283,7 +283,7 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
       calendarUrl: string,
       email: string,
       privilege: SharePrivilege = "read-write",
-    ): Promise<{ success: boolean; error?: string }> => {
+    ): Promise<{ success: boolean; error?: string; status?: number }> => {
       try {
         const result = await caldavService.shareCalendar({
           calendarUrl,
@@ -300,6 +300,7 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
         return {
           success: false,
           error: result.error || "Failed to share calendar",
+          status: result.status,
         };
       } catch (error) {
         console.error("Error sharing calendar:", error);

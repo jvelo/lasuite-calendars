@@ -63,6 +63,7 @@ export const useCreateICalFeedChannel = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
+    meta: { noGlobalError: true },
     mutationFn: createICalFeedChannel,
     onSuccess: (_data, params) => {
       void queryClient.invalidateQueries({
@@ -93,6 +94,7 @@ export const useDeleteICalFeedChannel = () => {
  */
 export const useImportEvents = () => {
   return useMutation<ImportEventsResult, Error, { caldavPath: string; file: File }>({
+    meta: { noGlobalError: true },
     mutationFn: async ({ caldavPath, file }) => {
       const taskId = await startImportTask(caldavPath, file);
       return pollImportTask(taskId);

@@ -31,7 +31,37 @@ SEND_ROLES = {"sender", "admin"}
 
 
 class SetupServiceError(Exception):
-    """Raised when a mailbox operation fails."""
+    """Raised when a mailbox operation fails.
+
+    ``code`` is a stable identifier. The message is for the logs only:
+    it can hold internal details.
+    """
+
+    code = "calendar_creation_failed"
+
+
+class MessagesDisabledError(SetupServiceError):
+    """Raised when the Messages integration is not enabled."""
+
+    code = "messages_disabled"
+
+
+class MailboxAccessDeniedError(SetupServiceError):
+    """Raised when the user has no access to the mailbox."""
+
+    code = "mailbox_access_denied"
+
+
+class MailboxRoleRequiredError(SetupServiceError):
+    """Raised when the user has no role on the mailbox that lets them send."""
+
+    code = "mailbox_role_required"
+
+
+class MailboxOrgUnresolvedError(SetupServiceError):
+    """Raised when the organization of the mailbox cannot be found."""
+
+    code = "mailbox_org_unresolved"
 
 
 def _resolve_mailbox_org_id(mailbox_data):
@@ -62,7 +92,7 @@ def _resolve_mailbox_org_id(mailbox_data):
     if org_claim:
         external_id = custom_attrs.get(org_claim)
         if not external_id:
-            raise SetupServiceError(
+            raise MailboxOrgUnresolvedError(
                 f"Mailbox {mailbox_email} has no "
                 f"'{org_claim}' attribute on its mail domain"
             )
@@ -73,7 +103,7 @@ def _resolve_mailbox_org_id(mailbox_data):
             else None
         )
         if not external_id:
-            raise SetupServiceError(
+            raise MailboxOrgUnresolvedError(
                 f"Cannot resolve organization for mailbox {mailbox_email}: "
                 "no organization claim configured and no usable email domain"
             )
@@ -159,7 +189,7 @@ class SetupService:
         propagated to other mailbox users via the share fan-out.
         """
         if not settings.FEATURE_MESSAGES_INTEGRATION:
-            raise SetupServiceError("Messages integration is not enabled")
+            raise MessagesDisabledError("Messages integration is not enabled")
 
         # Verify user has sender/admin access
         mailboxes = self.messages.get_user_mailboxes(user.email)
@@ -168,13 +198,13 @@ class SetupService:
             None,
         )
         if not user_mailbox:
-            raise SetupServiceError(
+            raise MailboxAccessDeniedError(
                 f"User {user.email} does not have access to mailbox {mailbox_email}"
             )
 
         user_role = user_mailbox.get("role", "viewer")
         if user_role not in SEND_ROLES:
-            raise SetupServiceError(
+            raise MailboxRoleRequiredError(
                 f"User needs 'sender' or 'admin' role to create a mailbox calendar"
                 f" (current role: {user_role})"
             )

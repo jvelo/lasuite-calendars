@@ -104,7 +104,10 @@ export interface ImportEventsResult {
   imported_count: number;
   duplicate_count: number;
   skipped_count: number;
+  /** Summaries of the failed events, or their UIDs. Empty when an event has neither. */
   errors?: string[];
+  /** Failure code of the import service. Absent or null when per-event results exist. */
+  error_code?: "unavailable" | "invalid_calendar" | "invalid_file" | null;
 }
 
 /**

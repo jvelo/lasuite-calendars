@@ -12,7 +12,7 @@ import { DEFAULT_EVENT_COLOR } from "@/features/calendar/constants";
 import type { CalendarListItemProps } from "./types";
 
 /**
- * CalendarListItem - Displays a user-owned calendar.
+ * CalendarListItem - Displays an owned or shared calendar.
  */
 export const CalendarListItem = ({
   calendar,
@@ -44,7 +44,9 @@ export const CalendarListItem = ({
           checked={isVisible}
           onChange={() => onToggleVisibility(calendar.url)}
           label=""
-          aria-label={`${t("calendar.list.showCalendar")} ${calendar.displayName || ""}`}
+          aria-label={t("calendar.list.showCalendar", {
+            name: calendar.displayName || t("calendar.list.unnamed"),
+          })}
         />
       </div>
       <div className="calendar-list__name-wrapper">

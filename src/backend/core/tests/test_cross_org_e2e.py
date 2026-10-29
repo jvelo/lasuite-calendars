@@ -345,7 +345,7 @@ class TestResourceProvisioningE2E:
 
         # Django returns 400 because SabreDAV returned 403
         assert response.status_code == HTTP_400_BAD_REQUEST
-        assert "different organization" in response.json()["detail"].lower()
+        assert response.json()["code"] == "resource_access_denied"
 
 
 # ---------------------------------------------------------------------------

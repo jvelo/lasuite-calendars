@@ -9,6 +9,10 @@
         "title": "You don't have the necessary permissions to access this page.",
         "button": "Home"
       },
+      "404": {
+        "title": "This page does not exist.",
+        "button": "Home"
+      },
       "no_access": {
         "title": "Your login was successful, but this application is not available for your account.",
         "description": "If you think this is a mistake, please contact support.",
@@ -61,7 +65,10 @@
       },
       "api": {
         "error": {
-          "unexpected": "An unexpected error occurred."
+          "unexpected": "An unexpected error occurred.",
+          "forbidden": "You do not have permission to do this.",
+          "network": "Network error. Please check your connection and try again.",
+          "fileTooLarge": "The file is too large."
         }
       },
       "home": {
@@ -131,8 +138,10 @@
       "calendar": {
         "error": {
           "connection": "Failed to connect to the calendar server. Please try again later.",
+          "updateEvent": "Failed to update the event. Please try again.",
           "fetchCalendars": "Failed to load calendars. Please try again later.",
-          "fetchEvents": "Failed to load some events. Please try again later."
+          "fetchEvents": "Failed to load some events. Please try again later.",
+          "reorderCalendars": "The calendar order could not be saved. Please try again."
         },
         "views": {
           "day": "Day",
@@ -144,6 +153,8 @@
           "listMonth": "Month list",
           "listYear": "Year list",
           "today": "Today",
+          "moreEvents_one": "+{{count}} more",
+          "moreEvents_other": "+{{count}} more",
           "mobile": {
             "oneDay": "One day",
             "workWeek": "Work week",
@@ -162,6 +173,7 @@
           "calendar": "Calendar",
           "title": "Title",
           "titlePlaceholder": "Event title",
+          "noTitle": "(No title)",
           "location": "Location",
           "locationPlaceholder": "Location",
           "openLocation": "Open",
@@ -246,7 +258,7 @@
           "tentative": "Tentative",
           "declined": "Declined",
           "needsAction": "No response",
-          "yourResponse": "Your response",
+          "yourResponse": "Your response:",
           "cancelledNotice": "This event has been cancelled.",
           "rsvpRecurringTitle": "Respond to recurring event",
           "rsvpRecurringPrompt": "This is a recurring event. Apply your response to:"
@@ -258,7 +270,7 @@
           "shared": "(shared)",
           "mailboxCalendar": "Linked to mailbox: {{email}}",
           "unnamed": "Unnamed calendar",
-          "showCalendar": "Show calendar",
+          "showCalendar": "Show calendar {{name}}",
           "edit": "Edit",
           "delete": "Delete",
           "share": "Share",
@@ -274,11 +286,17 @@
           "selectFile": "Select file",
           "import": "Import",
           "resultHeader": "Import results",
-          "imported": "events imported",
-          "duplicates": "events already existed",
-          "skipped": "events skipped (unsupported format)",
+          "imported_one": "event imported",
+          "imported_other": "events imported",
+          "duplicates_one": "event already existed",
+          "duplicates_other": "events already existed",
+          "skipped_one": "event skipped (unsupported format)",
+          "skipped_other": "events skipped (unsupported format)",
           "error": "An error occurred during import. Please try again.",
-          "errorDetails": "Error details"
+          "invalidFile": "This file is not a valid calendar file (.ics).",
+          "errorDetails": "Error details",
+          "unnamedEvent": "Event without a title",
+          "fileTooLarge": "The file is too large. The maximum size is {{max}} MB."
         },
         "subscription": {
           "title": "Calendar Subscription URL",
@@ -329,6 +347,19 @@
           "on": "On",
           "after": "After",
           "occurrences": "occurrences",
+          "summary": {
+            "daily_one": "Every day",
+            "daily_other": "Every {{count}} days",
+            "weekly_one": "Every week",
+            "weekly_other": "Every {{count}} weeks",
+            "monthly_one": "Every month",
+            "monthly_other": "Every {{count}} months",
+            "yearly_one": "Every year",
+            "yearly_other": "Every {{count}} years",
+            "until": "until {{date}}",
+            "count_one": "{{count}} occurrence",
+            "count_other": "{{count}} occurrences"
+          },
           "weekdays": {
             "mo": "M",
             "tu": "T",
@@ -365,6 +396,8 @@
           "name": "Name",
           "namePlaceholder": "Calendar name",
           "nameRequired": "Name is required",
+          "error": "The calendar could not be created. Please try again.",
+          "errorMailboxRole": "You need the sender or administrator role on this mailbox to create a calendar for it.",
           "color": "Color",
           "description": "Description",
           "descriptionPlaceholder": "Calendar description (optional)",
@@ -400,6 +433,11 @@
           "hint": "The person will have the same rights as you (read and write).",
           "success": "Calendar shared with {{email}}",
           "error": "Failed to share calendar",
+          "errorRemove": "Failed to remove access",
+          "errorOwner": "You cannot share a calendar with its owner.",
+          "errorForbidden": "You do not have permission to change the sharing of this calendar.",
+          "errorMailboxReadOnly": "A mailbox calendar can only be shared with read-only access. Write access is managed in Messages.",
+          "errorSyncManaged": "This person's access is managed by Messages. Change it in Messages.",
           "invalidEmail": "Please enter a valid email address",
           "syncManagedHint": "Managed by Messages.",
           "mailboxInfoAdmin": "This calendar is linked to the mailbox {{email}}. You can add read-only shares below. Write access is managed in Messages.",
@@ -650,7 +688,8 @@
         "previousDay": "Previous day",
         "nextDay": "Next day",
         "noConflicts": "No conflicts",
-        "conflicts": "{{count}} conflict(s)",
+        "conflicts_one": "{{count}} conflict",
+        "conflicts_other": "{{count}} conflicts",
         "addAttendeesToSeeAvailability": "Add attendees to see availability"
       }
     }
@@ -663,11 +702,15 @@
         }
       },
       "401": {
-        "title": "Connectez-vous pour accéder aux documents.",
+        "title": "Connectez-vous pour accéder à cette application.",
         "button": "Se connecter"
       },
       "403": {
         "title": "Vous n'avez pas les permissions nécessaires pour accéder à cette page.",
+        "button": "Accueil"
+      },
+      "404": {
+        "title": "Cette page n'existe pas.",
         "button": "Accueil"
       },
       "no_access": {
@@ -756,7 +799,10 @@
       },
       "api": {
         "error": {
-          "unexpected": "Une erreur inattendue est survenue."
+          "unexpected": "Une erreur inattendue est survenue.",
+          "forbidden": "Vous n'avez pas les droits nécessaires pour effectuer cette action.",
+          "network": "Erreur réseau. Vérifiez votre connexion et réessayez.",
+          "fileTooLarge": "Le fichier est trop volumineux."
         }
       },
       "home": {
@@ -1090,8 +1136,10 @@
       "calendar": {
         "error": {
           "connection": "Impossible de se connecter au serveur de calendrier. Veuillez réessayer plus tard.",
+          "updateEvent": "Impossible de modifier l'événement. Veuillez réessayer.",
           "fetchCalendars": "Impossible de charger les calendriers. Veuillez réessayer plus tard.",
-          "fetchEvents": "Impossible de charger certains événements. Veuillez réessayer plus tard."
+          "fetchEvents": "Impossible de charger certains événements. Veuillez réessayer plus tard.",
+          "reorderCalendars": "Impossible d'enregistrer l'ordre des calendriers. Veuillez réessayer."
         },
         "views": {
           "day": "Jour",
@@ -1103,6 +1151,8 @@
           "listMonth": "Liste mois",
           "listYear": "Liste année",
           "today": "Aujourd'hui",
+          "moreEvents_one": "+{{count}} autre",
+          "moreEvents_other": "+{{count}} autres",
           "mobile": {
             "oneDay": "Un jour",
             "workWeek": "Semaine ouvrée",
@@ -1121,6 +1171,7 @@
           "calendar": "Calendrier",
           "title": "Titre",
           "titlePlaceholder": "Titre de l'événement",
+          "noTitle": "(Sans titre)",
           "location": "Lieu",
           "locationPlaceholder": "Lieu",
           "openLocation": "Ouvrir",
@@ -1205,7 +1256,7 @@
           "tentative": "Peut-être",
           "declined": "Refusé",
           "needsAction": "En attente",
-          "yourResponse": "Votre réponse",
+          "yourResponse": "Votre réponse :",
           "cancelledNotice": "Cet événement a été annulé.",
           "rsvpRecurringTitle": "Répondre à un événement récurrent",
           "rsvpRecurringPrompt": "Ceci est un événement récurrent. Appliquer votre réponse à :"
@@ -1217,7 +1268,7 @@
           "shared": "(partagé)",
           "unnamed": "Calendrier sans nom",
           "mailboxCalendar": "Lié à la boîte : {{email}}",
-          "showCalendar": "Afficher le calendrier",
+          "showCalendar": "Afficher le calendrier {{name}}",
           "edit": "Modifier",
           "delete": "Supprimer",
           "share": "Partager",
@@ -1233,11 +1284,17 @@
           "selectFile": "Choisir un fichier",
           "import": "Importer",
           "resultHeader": "Résultats de l'import",
-          "imported": "événements importés",
-          "duplicates": "événements existaient déjà",
-          "skipped": "événements ignorés (format non supporté)",
+          "imported_one": "événement importé",
+          "imported_other": "événements importés",
+          "duplicates_one": "événement existait déjà",
+          "duplicates_other": "événements existaient déjà",
+          "skipped_one": "événement ignoré (format non supporté)",
+          "skipped_other": "événements ignorés (format non supporté)",
           "error": "Une erreur est survenue lors de l'importation. Veuillez réessayer.",
-          "errorDetails": "Détails des erreurs"
+          "invalidFile": "Ce fichier n'est pas un fichier de calendrier valide (.ics).",
+          "errorDetails": "Détails des erreurs",
+          "unnamedEvent": "Événement sans titre",
+          "fileTooLarge": "Le fichier est trop volumineux. La taille maximale est de {{max}} Mo."
         },
         "subscription": {
           "title": "URL d'abonnement au calendrier",
@@ -1288,6 +1345,19 @@
           "on": "Le",
           "after": "Après",
           "occurrences": "occurrences",
+          "summary": {
+            "daily_one": "Tous les jours",
+            "daily_other": "Tous les {{count}} jours",
+            "weekly_one": "Chaque semaine",
+            "weekly_other": "Toutes les {{count}} semaines",
+            "monthly_one": "Tous les mois",
+            "monthly_other": "Tous les {{count}} mois",
+            "yearly_one": "Tous les ans",
+            "yearly_other": "Tous les {{count}} ans",
+            "until": "jusqu'au {{date}}",
+            "count_one": "{{count}} occurrence",
+            "count_other": "{{count}} occurrences"
+          },
           "weekdays": {
             "mo": "L",
             "tu": "M",
@@ -1324,6 +1394,8 @@
           "name": "Nom du calendrier",
           "namePlaceholder": "Nom du calendrier",
           "nameRequired": "Le nom est requis",
+          "error": "Le calendrier n'a pas pu être créé. Veuillez réessayer.",
+          "errorMailboxRole": "Vous devez avoir le rôle d'expéditeur ou d'administrateur sur cette boîte pour lui créer un calendrier.",
           "color": "Couleur",
           "description": "Description",
           "descriptionPlaceholder": "Description du calendrier (optionnel)",
@@ -1359,6 +1431,11 @@
           "hint": "La personne aura les mêmes droits que vous (lecture et écriture).",
           "success": "Calendrier partagé avec {{email}}",
           "error": "Échec du partage du calendrier",
+          "errorRemove": "Impossible de retirer l'accès",
+          "errorOwner": "Vous ne pouvez pas partager un calendrier avec son propriétaire.",
+          "errorForbidden": "Vous n'avez pas la permission de modifier le partage de ce calendrier.",
+          "errorMailboxReadOnly": "Un calendrier de boîte ne peut être partagé qu'en lecture seule. L'accès en écriture est géré dans Messages.",
+          "errorSyncManaged": "L'accès de cette personne est géré par Messages. Modifiez-le dans Messages.",
           "invalidEmail": "Veuillez entrer une adresse email valide",
           "syncManagedHint": "Géré par Messages.",
           "mailboxInfoAdmin": "Ce calendrier est lié à la boîte {{email}}. Vous pouvez ajouter des partages en lecture seule ci-dessous. L'accès en écriture est géré dans Messages.",
@@ -1609,7 +1686,8 @@
         "previousDay": "Jour précédent",
         "nextDay": "Jour suivant",
         "noConflicts": "Aucun conflit",
-        "conflicts": "{{count}} conflit(s)",
+        "conflicts_one": "{{count}} conflit",
+        "conflicts_other": "{{count}} conflits",
         "addAttendeesToSeeAvailability": "Ajoutez des participants pour voir les disponibilités"
       }
     }
@@ -1632,12 +1710,16 @@
         }
       },
       "401": {
-        "title": "U moet ingelogd zijn om toegang te krijgen tot de bestanden.",
-        "button": "Login"
+        "title": "U moet ingelogd zijn om toegang te krijgen tot deze applicatie.",
+        "button": "Inloggen"
       },
       "403": {
-        "title": "U beschikt niet over de benodigde rechten om dit bestand te openen.",
-        "button": "Home"
+        "title": "U beschikt niet over de benodigde rechten om deze pagina te openen.",
+        "button": "Startpagina"
+      },
+      "404": {
+        "title": "Deze pagina bestaat niet.",
+        "button": "Startpagina"
       },
       "file_download_modal": {
         "error": {
@@ -1715,7 +1797,10 @@
       },
       "api": {
         "error": {
-          "unexpected": "Er is een onverwachte fout opgetreden."
+          "unexpected": "Er is een onverwachte fout opgetreden.",
+          "forbidden": "U hebt geen toestemming om dit te doen.",
+          "network": "Netwerkfout. Controleer uw verbinding en probeer het opnieuw.",
+          "fileTooLarge": "Het bestand is te groot."
         }
       },
       "home": {
@@ -1796,8 +1881,10 @@
       "calendar": {
         "error": {
           "connection": "Kan geen verbinding maken met de kalenderserver. Probeer het later opnieuw.",
+          "updateEvent": "Kan het evenement niet bijwerken. Probeer het opnieuw.",
           "fetchCalendars": "Kan kalenders niet laden. Probeer het later opnieuw.",
-          "fetchEvents": "Kan sommige evenementen niet laden. Probeer het later opnieuw."
+          "fetchEvents": "Kan sommige evenementen niet laden. Probeer het later opnieuw.",
+          "reorderCalendars": "De volgorde van de kalenders kon niet worden opgeslagen. Probeer het opnieuw."
         },
         "views": {
           "day": "Dag",
@@ -1809,6 +1896,8 @@
           "listMonth": "Maand lijst",
           "listYear": "Jaar lijst",
           "today": "Vandaag",
+          "moreEvents_one": "+{{count}} meer",
+          "moreEvents_other": "+{{count}} meer",
           "mobile": {
             "oneDay": "Een dag",
             "workWeek": "Werkweek",
@@ -1827,6 +1916,7 @@
           "calendar": "Kalender",
           "title": "Titel",
           "titlePlaceholder": "Evenement titel",
+          "noTitle": "(Geen titel)",
           "location": "Locatie",
           "locationPlaceholder": "Locatie",
           "openLocation": "Openen",
@@ -1859,7 +1949,7 @@
             "addRecurrence": "Herhaling toevoegen",
             "addLocation": "Locatie toevoegen",
             "addVideoConference": "Visio",
-            "createVisio": "Add video conference",
+            "createVisio": "Videoconferentie toevoegen",
             "removeVisio": "Videoconferentie verwijderen",
             "videoLink": "Videoconferentie link",
             "addAttendees": "Deelnemers toevoegen",
@@ -1911,7 +2001,7 @@
           "tentative": "Misschien",
           "declined": "Geweigerd",
           "needsAction": "Geen antwoord",
-          "yourResponse": "Uw antwoord",
+          "yourResponse": "Uw antwoord:",
           "cancelledNotice": "Dit evenement is geannuleerd.",
           "rsvpRecurringTitle": "Antwoorden op terugkerend evenement",
           "rsvpRecurringPrompt": "Dit is een terugkerend evenement. Pas uw antwoord toe op:"
@@ -1923,7 +2013,7 @@
           "shared": "(gedeeld)",
           "unnamed": "Naamloze kalender",
           "mailboxCalendar": "Gekoppeld aan mailbox: {{email}}",
-          "showCalendar": "Kalender tonen",
+          "showCalendar": "Kalender {{name}} tonen",
           "edit": "Bewerken",
           "delete": "Verwijderen",
           "share": "Delen",
@@ -1939,11 +2029,17 @@
           "selectFile": "Bestand kiezen",
           "import": "Importeren",
           "resultHeader": "Importresultaten",
-          "imported": "evenementen geïmporteerd",
-          "duplicates": "evenementen bestonden al",
-          "skipped": "evenementen overgeslagen (niet-ondersteund formaat)",
+          "imported_one": "evenement geïmporteerd",
+          "imported_other": "evenementen geïmporteerd",
+          "duplicates_one": "evenement bestond al",
+          "duplicates_other": "evenementen bestonden al",
+          "skipped_one": "evenement overgeslagen (niet-ondersteund formaat)",
+          "skipped_other": "evenementen overgeslagen (niet-ondersteund formaat)",
           "error": "Er is een fout opgetreden tijdens het importeren. Probeer het opnieuw.",
-          "errorDetails": "Foutdetails"
+          "invalidFile": "Dit bestand is geen geldig kalenderbestand (.ics).",
+          "errorDetails": "Foutdetails",
+          "unnamedEvent": "Evenement zonder titel",
+          "fileTooLarge": "Het bestand is te groot. De maximale grootte is {{max}} MB."
         },
         "subscription": {
           "title": "Kalender-abonnements-URL",
@@ -1994,6 +2090,19 @@
           "on": "Op",
           "after": "Na",
           "occurrences": "keer",
+          "summary": {
+            "daily_one": "Elke dag",
+            "daily_other": "Elke {{count}} dagen",
+            "weekly_one": "Elke week",
+            "weekly_other": "Elke {{count}} weken",
+            "monthly_one": "Elke maand",
+            "monthly_other": "Elke {{count}} maanden",
+            "yearly_one": "Elk jaar",
+            "yearly_other": "Elke {{count}} jaar",
+            "until": "tot {{date}}",
+            "count_one": "{{count}} keer",
+            "count_other": "{{count}} keer"
+          },
           "weekdays": {
             "mo": "M",
             "tu": "D",
@@ -2030,6 +2139,8 @@
           "name": "Naam",
           "namePlaceholder": "Kalender naam",
           "nameRequired": "Naam is verplicht",
+          "error": "De kalender kon niet worden aangemaakt. Probeer het opnieuw.",
+          "errorMailboxRole": "U hebt de rol afzender of beheerder nodig op deze mailbox om er een kalender voor aan te maken.",
           "color": "Kleur",
           "description": "Beschrijving",
           "descriptionPlaceholder": "Kalender beschrijving (optioneel)",
@@ -2065,6 +2176,11 @@
           "hint": "De persoon krijgt dezelfde rechten als u (lezen en schrijven).",
           "success": "Kalender gedeeld met {{email}}",
           "error": "Delen van kalender mislukt",
+          "errorRemove": "Toegang verwijderen mislukt",
+          "errorOwner": "Je kunt een kalender niet delen met de eigenaar.",
+          "errorForbidden": "Je hebt geen toestemming om het delen van deze kalender te wijzigen.",
+          "errorMailboxReadOnly": "Mailboxkalenders kunnen alleen met alleen-lezen toegang worden gedeeld. Schrijftoegang wordt beheerd in Messages.",
+          "errorSyncManaged": "De toegang van deze persoon wordt beheerd door Messages. Wijzig deze in Messages.",
           "invalidEmail": "Voer een geldig e-mailadres in",
           "syncManagedHint": "Beheerd door Messages.",
           "mailboxInfoAdmin": "Deze kalender is gekoppeld aan mailbox {{email}}. Je kunt hieronder alleen-lezen toegang toevoegen. Schrijftoegang wordt beheerd in Messages.",
@@ -2315,7 +2431,8 @@
         "previousDay": "Vorige dag",
         "nextDay": "Volgende dag",
         "noConflicts": "Geen conflicten",
-        "conflicts": "{{count}} conflict(en)",
+        "conflicts_one": "{{count}} conflict",
+        "conflicts_other": "{{count}} conflicten",
         "addAttendeesToSeeAvailability": "Voeg deelnemers toe om beschikbaarheid te zien"
       }
     }

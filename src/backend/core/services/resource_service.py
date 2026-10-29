@@ -11,7 +11,43 @@ logger = logging.getLogger(__name__)
 
 
 class ResourceProvisioningError(Exception):
-    """Raised when resource provisioning fails."""
+    """Raised when resource provisioning fails.
+
+    ``code`` is a stable identifier. The message is for the logs only:
+    it can hold internal details.
+    """
+
+    code = "resource_service_failed"
+
+
+class InvalidResourceTypeError(ResourceProvisioningError):
+    """Raised when the resource type is not valid."""
+
+    code = "invalid_resource_type"
+
+
+class InvalidResourceIdError(ResourceProvisioningError):
+    """Raised when the resource ID is not valid."""
+
+    code = "invalid_resource_id"
+
+
+class ResourceAlreadyExistsError(ResourceProvisioningError):
+    """Raised when a resource with the same ID already exists."""
+
+    code = "resource_already_exists"
+
+
+class ResourceNotFoundError(ResourceProvisioningError):
+    """Raised when the resource does not exist."""
+
+    code = "resource_not_found"
+
+
+class ResourceAccessDeniedError(ResourceProvisioningError):
+    """Raised when the user cannot act on the resource."""
+
+    code = "resource_access_denied"
 
 
 class ResourceService:
@@ -47,7 +83,7 @@ class ResourceService:
             ResourceProvisioningError on failure.
         """
         if resource_type not in ("ROOM", "RESOURCE"):
-            raise ResourceProvisioningError(
+            raise InvalidResourceTypeError(
                 "resource_type must be 'ROOM' or 'RESOURCE'."
             )
 
@@ -80,7 +116,9 @@ class ResourceService:
             ) from e
 
         if response.status_code == 409:
-            raise ResourceProvisioningError(f"Resource '{resource_id}' already exists.")
+            raise ResourceAlreadyExistsError(
+                f"Resource '{resource_id}' already exists."
+            )
 
         if response.status_code != 201:
             logger.error(
@@ -112,7 +150,7 @@ class ResourceService:
         try:
             UUID(str(resource_id))
         except (ValueError, AttributeError) as e:
-            raise ResourceProvisioningError(
+            raise InvalidResourceIdError(
                 "Invalid resource ID: must be a valid UUID."
             ) from e
 
@@ -147,14 +185,14 @@ class ResourceService:
             raise ResourceProvisioningError("Failed to delete resource.") from e
 
         if response.status_code == 404:
-            raise ResourceProvisioningError(f"Resource '{resource_id}' not found.")
+            raise ResourceNotFoundError(f"Resource '{resource_id}' not found.")
 
         if response.status_code == 403:
             try:
                 error_msg = response.json().get("error", "")
             except ValueError:
                 error_msg = ""
-            raise ResourceProvisioningError(
+            raise ResourceAccessDeniedError(
                 error_msg or "Cannot delete a resource from a different organization."
             )
 
