@@ -32,7 +32,7 @@ export interface CalendarItemMenuProps {
   onDelete?: () => void;
   /** Asks to confirm that the user leaves the calendar. Set it for a sharee only. */
   onLeave?: () => void;
-  /** Disables the delete action and shows that Messages manages the access. */
+  /** Disables the delete action and says that a mailbox calendar cannot be deleted. */
   syncManaged?: boolean;
   onShare?: () => void;
   onImport?: () => void;

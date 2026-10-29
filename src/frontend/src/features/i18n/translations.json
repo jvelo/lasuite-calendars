@@ -280,7 +280,7 @@
           "moveDown": "Move down",
           "options": "Options",
           "leaveCalendar": "Leave calendar",
-          "managedByMessages": "Access managed in Messages"
+          "cannotDeleteMailboxCalendar": "A mailbox calendar cannot be deleted"
         },
         "importEvents": {
           "title": "Import events",
@@ -1287,7 +1287,7 @@
           "moveDown": "Déplacer vers le bas",
           "options": "Options",
           "leaveCalendar": "Quitter le calendrier",
-          "managedByMessages": "Accès géré dans Messages"
+          "cannotDeleteMailboxCalendar": "Un calendrier de boîte ne peut pas être supprimé"
         },
         "importEvents": {
           "title": "Importer des événements",
@@ -2041,7 +2041,7 @@
           "moveDown": "Omlaag verplaatsen",
           "options": "Opties",
           "leaveCalendar": "Kalender verlaten",
-          "managedByMessages": "Toegang beheerd in Messages"
+          "cannotDeleteMailboxCalendar": "Een mailboxkalender kan niet worden verwijderd"
         },
         "importEvents": {
           "title": "Evenementen importeren",

@@ -93,7 +93,7 @@ export const CalendarItemMenu = ({
       icon: <Trash />,
       callback: onLeave ?? onDelete,
       isDisabled: syncManaged,
-      subText: syncManaged ? t("calendar.list.managedByMessages") : undefined,
+      subText: syncManaged ? t("calendar.list.cannotDeleteMailboxCalendar") : undefined,
     });
 
     return items;
