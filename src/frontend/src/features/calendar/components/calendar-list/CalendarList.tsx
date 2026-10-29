@@ -8,7 +8,6 @@
 import { useState, useCallback } from "react";
 import { useTranslation } from "react-i18next";
 import { useCalendarContext } from "../../contexts";
-import { useAuth } from "@/features/auth/Auth";
 import { setupCalendar } from "@/features/mailbox/api";
 import { addToast, ToasterItem } from "@/features/ui/components/toaster/Toaster";
 import { CalendarModal } from "./CalendarModal";
@@ -18,8 +17,7 @@ import { ImportEventsModal } from "./ImportEventsModal";
 import { SubscriptionUrlModal } from "./SubscriptionUrlModal";
 import { CalendarListItem } from "./CalendarListItem";
 import { useCalendarListState } from "./hooks/useCalendarListState";
-import { extractCaldavPath } from "./utils";
-import { loadOnboardingDismissed, saveOnboardingDismissed } from "../../utils/onboarding-dismissal";
+import { extractCaldavPath, loadOnboardingDismissed, saveOnboardingDismissed } from "./utils";
 import { Plus, ChevronDown } from "@gouvfr-lasuite/ui-components/icons";
 
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
@@ -66,13 +64,10 @@ export const CalendarList = () => {
     deleteCalendar,
   });
 
-  const { user } = useAuth();
-  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(
-    () => !!user && loadOnboardingDismissed(user.id),
-  );
+  const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(loadOnboardingDismissed);
   const dismissOnboarding = () => {
     setIsOnboardingDismissed(true);
-    if (user) saveOnboardingDismissed(user.id);
+    saveOnboardingDismissed();
   };
   const canDismissOnboarding = sharedCalendars.length > 0;
   const showOnboarding =
