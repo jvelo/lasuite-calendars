@@ -343,7 +343,7 @@ class TestICSImportService:
 
     @patch("core.services.caldav_service.requests.Session.request")
     def test_import_invalid_ics(self, mock_post):
-        """Importing invalid ICS data should return an error from SabreDAV."""
+        """A file that SabreDAV cannot parse gives the invalid_file code."""
         mock_post.return_value = _make_sabredav_response(
             status_code=400,
         )
@@ -356,7 +356,7 @@ class TestICSImportService:
         result = service.import_events(user, caldav_path, ICS_INVALID)
 
         assert result.imported_count == 0
-        assert result.error_code == "unavailable"
+        assert result.error_code == "invalid_file"
         assert not result.errors
 
     @patch("core.services.caldav_service.requests.Session.request")
@@ -408,6 +408,37 @@ class TestICSImportService:
         assert len(result.errors) == 1
         # Only event name is exposed, not raw error details
         assert result.errors[0] == "Afternoon review"
+
+    @patch("core.services.caldav_service.requests.Session.request")
+    def test_import_unstructured_error_not_listed(self, mock_post):
+        """An error without an event has no name, so it is not in the list."""
+        mock_post.return_value = _make_sabredav_response(
+            total_events=2,
+            imported_count=1,
+            skipped_count=1,
+            errors=[{"uid": "event-1", "summary": "Standup"}, "Raw server error"],
+        )
+
+        user = factories.UserFactory()
+        caldav_path = _make_caldav_path(user)
+
+        service = ICSImportService()
+        result = service.import_events(user, caldav_path, ICS_MULTIPLE_EVENTS)
+
+        assert result.errors == ["Standup"]
+
+    @patch("core.services.caldav_service.requests.Session.request")
+    def test_import_server_error_is_unavailable(self, mock_post):
+        """A CalDAV server error other than 400 gives the unavailable code."""
+        mock_post.return_value = _make_sabredav_response(status_code=500)
+
+        user = factories.UserFactory()
+        caldav_path = _make_caldav_path(user)
+
+        service = ICSImportService()
+        result = service.import_events(user, caldav_path, ICS_MULTIPLE_EVENTS)
+
+        assert result.error_code == "unavailable"
 
     @patch("core.services.caldav_service.requests.Session.request")
     def test_import_all_day_event(self, mock_post):
