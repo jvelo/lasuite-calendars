@@ -76,6 +76,12 @@ Calendars checks two entitlements:
    calendars can still use them. A user who loses the entitlement
    can still remove events. Fail-closed: denies calendar management
    when entitlements are unavailable.
+
+   Known limitation: a sharee leaves a shared calendar with a `DELETE`
+   on their own calendar instance. This is a collection `DELETE`, so a
+   non-entitled sharee cannot leave a shared calendar.
+   The frontend sends non-entitled users to `/no-access`, so this
+   mainly affects external CalDAV clients.
 4. **Import events** (`core/api/viewsets.py`): Blocks
    `POST /calendars/import-events/` for non-entitled users.
    Fail-closed: denies import when entitlements are unavailable.

@@ -53,7 +53,7 @@ const ROLE_KEYS: Record<string, string> = {
 
 export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareModalProps) => {
   const { t } = useTranslation();
-  const { caldavService, shareCalendar } = useCalendarContext();
+  const { caldavService, shareCalendar, refreshCalendars } = useCalendarContext();
   const { user } = useAuth();
   const { availableMailboxes } = useMailboxContext();
   // ``rawSharees`` is the latest source of truth for the share list:
@@ -98,16 +98,17 @@ export const CalendarShareModal = ({ isOpen, calendar, onClose }: CalendarShareM
     }
   }, [isOpen, calendar]);
 
-  // Re-fetch the calendar to refresh its sharees after a mutation.
-  // ``CS:invite`` rides on the standard calendar fetch, so this is a
-  // single round-trip that keeps the modal in sync.
+  // After a mutation, refresh the sharees of the modal and the calendar
+  // list. ``CS:invite`` comes with the standard calendar fetch. The
+  // delete dialog reads the sharees from the calendar list.
   const refreshSharees = useCallback(async () => {
     if (!calendar) return;
     const result = await caldavService.fetchCalendar(calendar.url);
     if (result.success && result.data) {
       setRawSharees(result.data.sharees ?? []);
     }
-  }, [calendar, caldavService]);
+    void refreshCalendars();
+  }, [calendar, caldavService, refreshCalendars]);
 
   // Project the raw sharee list into the ShareModal's expected shape,
   // injecting the owner row at the top for non-mailbox calendars and

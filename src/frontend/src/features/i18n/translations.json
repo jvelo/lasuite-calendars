@@ -278,7 +278,8 @@
           "subscription": "Subscription URL",
           "moveUp": "Move up",
           "moveDown": "Move down",
-          "options": "Options"
+          "options": "Options",
+          "leaveCalendar": "Leave calendar"
         },
         "importEvents": {
           "title": "Import events",
@@ -424,7 +425,13 @@
         "deleteCalendar": {
           "title": "Delete calendar",
           "message": "Are you sure you want to delete the calendar \"{{name}}\"? This action cannot be undone.",
-          "confirm": "Delete"
+          "confirm": "Delete",
+          "sharedWarning": "This calendar is shared. It will be deleted for every person it is shared with."
+        },
+        "leaveCalendar": {
+          "title": "Leave this calendar",
+          "message": "Leave \"{{name}}\"? You lose access to this calendar. Only its owner can share it with you again. The calendar and the access of other people do not change.",
+          "confirm": "Leave"
         },
         "shareCalendar": {
           "title": "Share calendar",
@@ -1276,7 +1283,8 @@
           "subscription": "URL d'abonnement",
           "moveUp": "Déplacer vers le haut",
           "moveDown": "Déplacer vers le bas",
-          "options": "Options"
+          "options": "Options",
+          "leaveCalendar": "Quitter le calendrier"
         },
         "importEvents": {
           "title": "Importer des événements",
@@ -1422,7 +1430,13 @@
         "deleteCalendar": {
           "title": "Supprimer le calendrier",
           "message": "Êtes-vous sûr de vouloir supprimer le calendrier \"{{name}}\" ? Cette action est irréversible.",
-          "confirm": "Supprimer"
+          "confirm": "Supprimer",
+          "sharedWarning": "Ce calendrier est partagé. Il sera supprimé pour toutes les personnes avec qui il est partagé."
+        },
+        "leaveCalendar": {
+          "title": "Quitter ce calendrier",
+          "message": "Quitter \"{{name}}\" ? Vous perdez l'accès à ce calendrier. Seul son propriétaire peut le partager à nouveau avec vous. Le calendrier et l'accès des autres personnes ne changent pas.",
+          "confirm": "Quitter"
         },
         "shareCalendar": {
           "title": "Partager le calendrier",
@@ -2021,7 +2035,8 @@
           "subscription": "Abonnements-URL",
           "moveUp": "Omhoog verplaatsen",
           "moveDown": "Omlaag verplaatsen",
-          "options": "Opties"
+          "options": "Opties",
+          "leaveCalendar": "Kalender verlaten"
         },
         "importEvents": {
           "title": "Evenementen importeren",
@@ -2167,7 +2182,13 @@
         "deleteCalendar": {
           "title": "Kalender verwijderen",
           "message": "Weet u zeker dat u de kalender \"{{name}}\" wilt verwijderen? Deze actie kan niet ongedaan worden gemaakt.",
-          "confirm": "Verwijderen"
+          "confirm": "Verwijderen",
+          "sharedWarning": "Deze kalender is gedeeld. Hij wordt verwijderd voor iedereen met wie hij is gedeeld."
+        },
+        "leaveCalendar": {
+          "title": "Deze kalender verlaten",
+          "message": "\"{{name}}\" verlaten? U verliest de toegang tot deze kalender. Alleen de eigenaar kan hem opnieuw met u delen. De kalender en de toegang van andere personen veranderen niet.",
+          "confirm": "Verlaten"
         },
         "shareCalendar": {
           "title": "Kalender delen",
