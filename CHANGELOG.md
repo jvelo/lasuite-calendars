@@ -10,10 +10,10 @@ and this project adheres to
 
 ## [Unreleased]
 
-### Fixed
+### Added
 
-- 🐛(global) fix mailbox-owned calendars that could be created without
-  limit but never truly deleted (#73)
+- ✨(global) let mailbox admins delete a mailbox calendar for every
+  user (#73)
 
 ## [0.1.0] - 2026-06-18
 
