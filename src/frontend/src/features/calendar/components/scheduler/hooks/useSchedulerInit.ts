@@ -348,24 +348,3 @@ export const useSchedulerInit = ({
     i18n.language,
   ]);
 };
-
-/**
- * Hook to check scheduling capabilities on mount.
- * Silently verifies CalDAV scheduling support without debug output.
- */
-export const useSchedulingCapabilitiesCheck = (
-  isConnected: boolean,
-  caldavService: CalDavService,
-) => {
-  const hasCheckedRef = useRef(false);
-
-  useEffect(() => {
-    if (!isConnected || hasCheckedRef.current) return;
-
-    hasCheckedRef.current = true;
-
-    // Silently check scheduling capabilities
-    // Debug logging removed for production
-    caldavService.getSchedulingCapabilities();
-  }, [isConnected, caldavService]);
-};

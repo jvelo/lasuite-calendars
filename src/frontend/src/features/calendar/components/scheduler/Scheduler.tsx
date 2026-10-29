@@ -28,7 +28,7 @@ import { EventModal } from "./EventModal";
 import { RecurringEditModal } from "./RecurringEditModal";
 import { SchedulerToolbar } from "./SchedulerToolbar";
 import { useSchedulerHandlers } from "./hooks/useSchedulerHandlers";
-import { useSchedulerInit, useSchedulingCapabilitiesCheck } from "./hooks/useSchedulerInit";
+import { useSchedulerInit } from "./hooks/useSchedulerInit";
 import { useMobileNavigation } from "./hooks/useMobileNavigation";
 
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
@@ -94,9 +94,6 @@ export const Scheduler = ({ defaultCalendarUrl }: SchedulerProps) => {
       setCalendarUrl(defaultCalendarUrl || firstCalendar.url);
     }
   }, [orderedCalendars, defaultCalendarUrl, calendarUrl]);
-
-  // Check scheduling capabilities on mount
-  useSchedulingCapabilitiesCheck(isConnected, caldavService);
 
   // Initialize event handlers
   const {
