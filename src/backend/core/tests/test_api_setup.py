@@ -53,6 +53,48 @@ def test_api_setup_mailbox_viewer_role_returns_code(mock_messages):
     }
 
 
+@override_settings(FEATURE_MESSAGES_INTEGRATION=False)
+def test_api_setup_messages_disabled_returns_code():
+    """A mailbox calendar without the Messages integration gets its code."""
+    user = factories.UserFactory()
+
+    response = _client_for(user).post(
+        SETUP_URL,
+        {"name": "Team", "mailbox_email": "team@example.com"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "code": "messages_disabled",
+        "error": "Calendar setup failed.",
+    }
+
+
+@override_settings(
+    FEATURE_MESSAGES_INTEGRATION=True, OIDC_USERINFO_ORGANIZATION_CLAIM="siret"
+)
+@mock.patch("core.services.setup_service.MessagesService")
+def test_api_setup_mailbox_without_org_returns_code(mock_messages):
+    """A mailbox without the organization claim gets its code."""
+    user = factories.UserFactory()
+    mock_messages.return_value.get_user_mailboxes.return_value = [
+        {"email": "team@example.com", "role": "admin"}
+    ]
+
+    response = _client_for(user).post(
+        SETUP_URL,
+        {"name": "Team", "mailbox_email": "team@example.com"},
+        format="json",
+    )
+
+    assert response.status_code == 400
+    assert response.json() == {
+        "code": "mailbox_org_unresolved",
+        "error": "Calendar setup failed.",
+    }
+
+
 @override_settings(FEATURE_MESSAGES_INTEGRATION=True)
 @mock.patch("core.services.setup_service.MessagesService")
 def test_api_setup_unknown_mailbox_does_not_echo_details(mock_messages):
