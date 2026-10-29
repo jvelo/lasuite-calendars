@@ -35,7 +35,7 @@ export const FreeBusyTimeline = ({
   onTimeSelect,
 }: FreeBusyTimelineProps) => {
   const { t } = useTranslation();
-  const { calendarLocale, intlLocale } = useCalendarLocale();
+  const { locale } = useCalendarLocale();
   const containerRef = useRef<HTMLDivElement>(null);
   const calendarRef = useRef<ReturnType<typeof createCalendar> | null>(null);
   const handlersRef = useRef({ onTimeSelect, onDateChange });
@@ -50,7 +50,7 @@ export const FreeBusyTimeline = ({
     eventDurationRef.current = eventDurationMs;
   }, [eventDurationMs]);
 
-  const dateStr = date.toLocaleDateString(intlLocale, {
+  const dateStr = date.toLocaleDateString(locale, {
     weekday: "short",
     month: "short",
     day: "numeric",
@@ -114,7 +114,7 @@ export const FreeBusyTimeline = ({
       slotMaxTime: "24:00",
       slotDuration: "01:00",
       height: "auto",
-      locale: calendarLocale,
+      locale,
       date,
       resources,
       events,
@@ -204,7 +204,7 @@ export const FreeBusyTimeline = ({
       }
     };
     // Recreate when data changes
-  }, [date, resources, events, eventStart, eventEnd, calendarLocale]);
+  }, [date, resources, events, eventStart, eventEnd, locale]);
 
   const handlePrev = useCallback(() => {
     const prev = new Date(date);

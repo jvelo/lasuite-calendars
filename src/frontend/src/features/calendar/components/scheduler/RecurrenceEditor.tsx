@@ -136,8 +136,8 @@ export function getEndType(value?: IcsRecurrenceRule): EndType {
 // 2024-01-01 is a Monday. Each index gives a date on that weekday.
 const WEEKDAY_INDEX: Record<string, number> = { MO: 0, TU: 1, WE: 2, TH: 3, FR: 4, SA: 5, SU: 6 };
 
-const formatWeekday = (day: string, intlLocale: string): string =>
-  new Intl.DateTimeFormat(intlLocale, { weekday: "short", timeZone: "UTC" }).format(
+const formatWeekday = (day: string, locale: string): string =>
+  new Intl.DateTimeFormat(locale, { weekday: "short", timeZone: "UTC" }).format(
     new Date(Date.UTC(2024, 0, 1 + WEEKDAY_INDEX[day])),
   );
 
@@ -156,7 +156,7 @@ const SUMMARY_FREQUENCY_KEYS: Partial<Record<RecurrenceFrequency, string>> = {
 export function buildRecurrenceSummary(
   rule: IcsRecurrenceRule,
   t: TFunction,
-  intlLocale: string,
+  locale: string,
 ): string {
   const frequencyKey = SUMMARY_FREQUENCY_KEYS[rule.frequency];
   if (!frequencyKey) return "";
@@ -166,7 +166,7 @@ export function buildRecurrenceSummary(
   if (rule.frequency === "WEEKLY" && rule.byDay?.length) {
     // Not the one-letter button labels: "T" is both Tuesday and Thursday.
     const dayLabels = rule.byDay.map((d) =>
-      formatWeekday(typeof d === "string" ? d : d.day, intlLocale),
+      formatWeekday(typeof d === "string" ? d : d.day, locale),
     );
     parts.push(dayLabels.join(", "));
   }
@@ -179,7 +179,7 @@ export function buildRecurrenceSummary(
   const untilDate = getResolvedUntilDate(rule);
   if (endType === "date" && untilDate) {
     // The UTC fields of UNTIL hold the end day.
-    const date = new Intl.DateTimeFormat(intlLocale, {
+    const date = new Intl.DateTimeFormat(locale, {
       dateStyle: "medium",
       timeZone: "UTC",
     }).format(untilDate);
@@ -193,7 +193,7 @@ export function buildRecurrenceSummary(
 
 export function RecurrenceEditor({ value, onChange }: RecurrenceEditorProps) {
   const { t } = useTranslation();
-  const { intlLocale } = useCalendarLocale();
+  const { locale } = useCalendarLocale();
 
   const [isCustom, setIsCustom] = useState(() => {
     if (!value) return false;
@@ -250,8 +250,8 @@ export function RecurrenceEditor({ value, onChange }: RecurrenceEditorProps) {
   );
 
   const summary = useMemo(
-    () => (isCustom && value ? buildRecurrenceSummary(value, t, intlLocale) : ""),
-    [isCustom, value, t, intlLocale],
+    () => (isCustom && value ? buildRecurrenceSummary(value, t, locale) : ""),
+    [isCustom, value, t, locale],
   );
 
   const getSimpleValue = (): string => {

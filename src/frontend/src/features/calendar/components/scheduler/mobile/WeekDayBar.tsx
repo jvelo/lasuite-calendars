@@ -6,15 +6,15 @@ import type { WeekDayBarProps } from "../types";
 export const WeekDayBar = ({
   currentDate,
   currentView,
-  intlLocale,
+  locale,
   weekDays,
   onDayClick,
 }: WeekDayBarProps) => {
   const today = useMemo(() => new Date(), []);
 
   const narrowDayFormatter = useMemo(
-    () => new Intl.DateTimeFormat(intlLocale, { weekday: "narrow" }),
-    [intlLocale],
+    () => new Intl.DateTimeFormat(locale, { weekday: "narrow" }),
+    [locale],
   );
 
   // The WeekDayBar is only rendered for `timeGridDay` (where it doubles

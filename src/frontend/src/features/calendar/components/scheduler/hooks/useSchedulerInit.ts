@@ -84,7 +84,7 @@ export const useSchedulerInit = ({
   onEventsLoaded,
 }: UseSchedulerInitProps) => {
   const { t, i18n } = useTranslation();
-  const { calendarLocale, firstDayOfWeek, formatDayHeader } = useCalendarLocale();
+  const { locale, firstDayOfWeek, formatDayHeader } = useCalendarLocale();
 
   // Capture initial scroll time only once on first render
   const initialScrollTimeRef = useRef<string>(getCurrentTimeString());
@@ -154,7 +154,7 @@ export const useSchedulerInit = ({
       },
 
       // Locale & time settings
-      locale: calendarLocale,
+      locale,
       firstDay: firstDayOfWeek,
       slotDuration: "00:30",
       scrollTime: initialScrollTimeRef.current,
@@ -344,7 +344,7 @@ export const useSchedulerInit = ({
   }, [
     isConnected,
     calendarUrl,
-    calendarLocale,
+    locale,
     firstDayOfWeek,
     formatDayHeader,
     caldavService,
