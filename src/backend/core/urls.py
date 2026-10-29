@@ -12,6 +12,7 @@ from core.api.viewsets_channels import ChannelViewSet
 from core.api.viewsets_ical import ICalExportView
 from core.api.viewsets_rsvp import RSVPConfirmView
 from core.api.viewsets_setup import (
+    MailboxCalendarView,
     MailboxListView,
     SetupView,
 )
@@ -53,6 +54,11 @@ urlpatterns = [
                     "setup/mailboxes/",
                     MailboxListView.as_view(),
                     name="setup-mailboxes",
+                ),
+                path(
+                    "mailboxes/<str:mailbox_email>/calendars/<str:calendar_uri>/",
+                    MailboxCalendarView.as_view(),
+                    name="mailbox-calendar",
                 ),
                 # Task status polling endpoint
                 path(
