@@ -52,6 +52,9 @@ export const ImportEventsModal = ({
     const file = e.target.files?.[0] ?? null;
     setSelectedFile(file);
     setResult(null);
+    importMutation.reset();
+    // Lets the user pick the same file again after they fix it.
+    e.target.value = "";
   };
 
   const handleImport = async () => {
@@ -71,16 +74,14 @@ export const ImportEventsModal = ({
     setSelectedFile(null);
     setResult(null);
     importMutation.reset();
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
     onClose();
   };
 
-  const hasResult = result !== null;
   const isFileTooLarge = !!selectedFile && selectedFile.size > MAX_FILE_SIZE_MB * 1024 * 1024;
   const hasErrors = result && result.errors && result.errors.length > 0;
   const hasFailed = importMutation.isError || !!result?.error_code;
+  // A failed import keeps the file picker, so the user can try another file.
+  const hasResult = result !== null && !hasFailed;
 
   return (
     <Modal
@@ -148,7 +149,7 @@ export const ImportEventsModal = ({
           </Alert>
         )}
 
-        {hasResult && !hasFailed && (
+        {hasResult && (
           <div className="import-events-modal__result">
             <p className="import-events-modal__result-header">
               {t("calendar.importEvents.resultHeader")}
