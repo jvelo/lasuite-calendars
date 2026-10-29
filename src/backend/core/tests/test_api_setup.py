@@ -9,11 +9,6 @@ import requests
 from rest_framework.test import APIClient
 
 from core import factories
-from core.services.setup_service import (
-    CALENDAR_CREATION_FAILED,
-    MAILBOX_ACCESS_DENIED,
-    MAILBOX_ROLE_REQUIRED,
-)
 
 pytestmark = pytest.mark.django_db
 
@@ -53,7 +48,7 @@ def test_api_setup_mailbox_viewer_role_returns_code(mock_messages):
 
     assert response.status_code == 400
     assert response.json() == {
-        "code": MAILBOX_ROLE_REQUIRED,
+        "code": "mailbox_role_required",
         "error": "Calendar setup failed.",
     }
 
@@ -73,7 +68,7 @@ def test_api_setup_unknown_mailbox_does_not_echo_details(mock_messages):
 
     assert response.status_code == 400
     assert response.json() == {
-        "code": MAILBOX_ACCESS_DENIED,
+        "code": "mailbox_access_denied",
         "error": "Calendar setup failed.",
     }
 
@@ -91,6 +86,6 @@ def test_api_setup_caldav_failure_hides_internal_details(mock_http):
 
     assert response.status_code == 400
     assert response.json() == {
-        "code": CALENDAR_CREATION_FAILED,
+        "code": "calendar_creation_failed",
         "error": "Calendar setup failed.",
     }

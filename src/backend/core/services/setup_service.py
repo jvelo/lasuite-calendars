@@ -30,15 +30,6 @@ ROLE_TO_PRIVILEGE = {
 SEND_ROLES = {"sender", "admin"}
 
 
-# Error codes of ``SetupServiceError``.
-MESSAGES_DISABLED = "messages_disabled"
-MAILBOX_ACCESS_DENIED = "mailbox_access_denied"
-# The user has no role on the mailbox that lets them send.
-MAILBOX_ROLE_REQUIRED = "mailbox_role_required"
-MAILBOX_ORG_UNRESOLVED = "mailbox_org_unresolved"
-CALENDAR_CREATION_FAILED = "calendar_creation_failed"
-
-
 class SetupServiceError(Exception):
     """Raised when a mailbox operation fails.
 
@@ -46,9 +37,31 @@ class SetupServiceError(Exception):
     it can hold internal details.
     """
 
-    def __init__(self, message, code):
-        super().__init__(message)
-        self.code = code
+    code = "calendar_creation_failed"
+
+
+class MessagesDisabledError(SetupServiceError):
+    """Raised when the Messages integration is not enabled."""
+
+    code = "messages_disabled"
+
+
+class MailboxAccessDeniedError(SetupServiceError):
+    """Raised when the user has no access to the mailbox."""
+
+    code = "mailbox_access_denied"
+
+
+class MailboxRoleRequiredError(SetupServiceError):
+    """Raised when the user has no role on the mailbox that lets them send."""
+
+    code = "mailbox_role_required"
+
+
+class MailboxOrgUnresolvedError(SetupServiceError):
+    """Raised when the organization of the mailbox cannot be found."""
+
+    code = "mailbox_org_unresolved"
 
 
 def _resolve_mailbox_org_id(mailbox_data):
@@ -79,10 +92,9 @@ def _resolve_mailbox_org_id(mailbox_data):
     if org_claim:
         external_id = custom_attrs.get(org_claim)
         if not external_id:
-            raise SetupServiceError(
+            raise MailboxOrgUnresolvedError(
                 f"Mailbox {mailbox_email} has no "
-                f"'{org_claim}' attribute on its mail domain",
-                code=MAILBOX_ORG_UNRESOLVED,
+                f"'{org_claim}' attribute on its mail domain"
             )
     else:
         external_id = (
@@ -91,10 +103,9 @@ def _resolve_mailbox_org_id(mailbox_data):
             else None
         )
         if not external_id:
-            raise SetupServiceError(
+            raise MailboxOrgUnresolvedError(
                 f"Cannot resolve organization for mailbox {mailbox_email}: "
-                "no organization claim configured and no usable email domain",
-                code=MAILBOX_ORG_UNRESOLVED,
+                "no organization claim configured and no usable email domain"
             )
 
     org, created = Organization.objects.get_or_create(
@@ -178,9 +189,7 @@ class SetupService:
         propagated to other mailbox users via the share fan-out.
         """
         if not settings.FEATURE_MESSAGES_INTEGRATION:
-            raise SetupServiceError(
-                "Messages integration is not enabled", code=MESSAGES_DISABLED
-            )
+            raise MessagesDisabledError("Messages integration is not enabled")
 
         # Verify user has sender/admin access
         mailboxes = self.messages.get_user_mailboxes(user.email)
@@ -189,17 +198,15 @@ class SetupService:
             None,
         )
         if not user_mailbox:
-            raise SetupServiceError(
-                f"User {user.email} does not have access to mailbox {mailbox_email}",
-                code=MAILBOX_ACCESS_DENIED,
+            raise MailboxAccessDeniedError(
+                f"User {user.email} does not have access to mailbox {mailbox_email}"
             )
 
         user_role = user_mailbox.get("role", "viewer")
         if user_role not in SEND_ROLES:
-            raise SetupServiceError(
+            raise MailboxRoleRequiredError(
                 f"User needs 'sender' or 'admin' role to create a mailbox calendar"
-                f" (current role: {user_role})",
-                code=MAILBOX_ROLE_REQUIRED,
+                f" (current role: {user_role})"
             )
 
         # Resolve org from the mailbox's mail domain custom attributes
@@ -379,16 +386,13 @@ class SetupService:
             )
             if resp.status_code not in (200, 201):
                 raise SetupServiceError(
-                    f"Failed to create calendar: {resp.status_code}",
-                    code=CALENDAR_CREATION_FAILED,
+                    f"Failed to create calendar: {resp.status_code}"
                 )
             return resp.json()
         except SetupServiceError:
             raise
         except Exception as exc:
-            raise SetupServiceError(
-                f"Failed to create calendar: {exc}", code=CALENDAR_CREATION_FAILED
-            ) from exc
+            raise SetupServiceError(f"Failed to create calendar: {exc}") from exc
 
     def _sync_acls(self, caller, shares, full_sync_users=None):
         """Batch sync mailbox shares via the internal API. One call.
