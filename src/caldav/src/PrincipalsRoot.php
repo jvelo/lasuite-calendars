@@ -28,7 +28,7 @@ class PrincipalsRoot extends DAV\Collection
         $this->children = [
             new NamedPrincipalCollection('users', $principalBackend, 'principals/users'),
             new NamedPrincipalCollection('mailboxes', $principalBackend, 'principals/mailboxes'),
-            new ResourcePrincipalCollection('resources', $principalBackend, 'principals/resources'),
+            new NamedPrincipalCollection('resources', $principalBackend, 'principals/resources'),
         ];
     }
 
@@ -82,23 +82,9 @@ class NamedPrincipalCollection extends CalDAV\Principal\Collection
     /**
      * Return SchedulablePrincipal nodes that allow authenticated users to
      * read principal properties (required for CalDAV scheduling / freebusy).
+     * Resource principals have no DAV owner, so the default ACL would
+     * reject every property read on them with 403.
      */
-    public function getChildForPrincipal(array $principal)
-    {
-        return new SchedulablePrincipal($this->principalBackend, $principal);
-    }
-}
-
-/**
- * Principal collection for resources.
- *
- * Resource principals have no DAV owner, so the default ACL (which only
- * grants {DAV:}all to {DAV:}owner) blocks all property reads with 403.
- * This collection returns SchedulablePrincipal nodes that additionally grant
- * {DAV:}read to {DAV:}authenticated.
- */
-class ResourcePrincipalCollection extends NamedPrincipalCollection
-{
     public function getChildForPrincipal(array $principal)
     {
         return new SchedulablePrincipal($this->principalBackend, $principal);

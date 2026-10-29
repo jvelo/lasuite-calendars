@@ -3,7 +3,6 @@
     "target": "ES2022",
     "lib": ["dom", "dom.iterable", "es2022"],
     "types": ["vite/client", "vitest/globals", "node"],
-    "allowJs": true,
     "skipLibCheck": true,
     "strict": true,
     "noEmit": true,

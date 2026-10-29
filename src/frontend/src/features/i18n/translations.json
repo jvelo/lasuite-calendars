@@ -657,11 +657,6 @@
   },
   "fr": {
     "translation": {
-      "entitlements": {
-        "can_upload": {
-          "cannot_upload": "Vous n'avez pas les droits nécessaires pour transférer des fichiers."
-        }
-      },
       "401": {
         "title": "Connectez-vous pour accéder aux documents.",
         "button": "Se connecter"
@@ -679,40 +674,6 @@
         "title": "Une erreur est survenue.",
         "description": "Une erreur inattendue s'est produite. Veuillez recharger la page.",
         "reload": "Recharger"
-      },
-      "file_download_modal": {
-        "error": {
-          "no_url_or_title": "Ce fichier n'a pas d'URL ou de titre. "
-        },
-        "suspicious": {
-          "title": "Ce fichier est suspect"
-        },
-        "file_too_large_to_analyze": {
-          "title": "Ce fichier est trop volumineux pour être analysé"
-        },
-        "analyzing": {
-          "title": "Ce fichier est en cours d'analyse"
-        },
-        "description": "Êtes-vous sûr de vouloir télécharger ce fichier ?",
-        "download": "Télécharger quand même",
-        "cancel": "Annuler"
-      },
-      "file_preview": {
-        "suspicious": {
-          "title": "Fichier suspect",
-          "description": "Ce fichier semble suspect. Il n'est visible que pour vous.",
-          "download": "Télécharger le fichier"
-        },
-        "error": {
-          "title": "Une erreur est survenue lors du chargement du document.",
-          "description": "Veuillez réessayer plus tard."
-        },
-        "unsupported": {
-          "title": "Type de fichier non supporté pour la prévisualisation",
-          "description": "Pour visualiser le fichier, téléchargez-le sur votre appareil.",
-          "download": "Télécharger le fichier",
-          "heic_title": "Les fichiers HEIC ne sont pas encore supportés pour la prévisualisation."
-        }
       },
       "common": {
         "back": "Retour",
@@ -800,17 +761,6 @@
           "alpha": "Cette application est en version alpha et son accès est restreint.",
           "user_cannot_access_app": "Vous n'avez pas les permissions nécessaires pour accéder à cette application. Contactez votre administrateur."
         }
-      },
-      "mime": {
-        "calc": "Tableur",
-        "doc": "Document",
-        "image": "Image",
-        "other": "Autre",
-        "pdf": "PDF",
-        "powerpoint": "Présentation",
-        "audio": "Audio",
-        "video": "Vidéo",
-        "archive": "Archive"
       },
       "roles": {
         "administrator": "Administrateur",
@@ -1626,11 +1576,6 @@
         "description": "Er is een onverwachte fout opgetreden. Laad de pagina opnieuw.",
         "reload": "Opnieuw laden"
       },
-      "entitlements": {
-        "can_upload": {
-          "cannot_upload": "U heeft niet de benodigde rechten om bestanden te uploaden."
-        }
-      },
       "401": {
         "title": "U moet ingelogd zijn om toegang te krijgen tot de bestanden.",
         "button": "Login"
@@ -1638,40 +1583,6 @@
       "403": {
         "title": "U beschikt niet over de benodigde rechten om dit bestand te openen.",
         "button": "Home"
-      },
-      "file_download_modal": {
-        "error": {
-          "no_url_or_title": "Dit bestand heeft geen URL of titel."
-        },
-        "suspicious": {
-          "title": "Dit bestand is verdacht"
-        },
-        "file_too_large_to_analyze": {
-          "title": "Dit bestand is te groot om te worden gescand"
-        },
-        "analyzing": {
-          "title": "Dit bestand wordt nog steeds gescand"
-        },
-        "description": "Weet u zeker dat u dit bestand wilt downloaden?",
-        "download": "Toch downloaden",
-        "cancel": "Annuleren"
-      },
-      "file_preview": {
-        "suspicious": {
-          "title": "Verdacht bestand",
-          "description": "Dit bestand is verdacht. Het is alleen voor jou zichtbaar.",
-          "download": "Bestand downloaden"
-        },
-        "error": {
-          "title": "Er is een fout opgetreden tijdens het laden van het document.",
-          "description": "Probeer het later opnieuw."
-        },
-        "unsupported": {
-          "title": "Bestandstype niet ondersteund voor voorbeeld",
-          "description": "Om het bestand te bekijken, downloadt u het naar uw apparaat.",
-          "download": "Bestand downloaden",
-          "heic_title": "HEIC bestanden worden nog niet ondersteund voor voorbeeld."
-        }
       },
       "common": {
         "back": "Terug",
@@ -1759,17 +1670,6 @@
           "alpha": "Deze applicatie bevindt zich in de alfa-fase en de toegang ertoe is beperkt.",
           "user_cannot_access_app": "U heeft niet de benodigde rechten om toegang te krijgen tot deze applicatie. Neem contact op met uw beheerder."
         }
-      },
-      "mime": {
-        "calc": "Spreadsheet",
-        "doc": "Document",
-        "image": "Afbeelding",
-        "other": "overige",
-        "pdf": "PDF",
-        "powerpoint": "Presentatie",
-        "audio": "Audio",
-        "video": "Video",
-        "archive": "Archief"
       },
       "roles": {
         "administrator": "Beheerder",

@@ -193,7 +193,6 @@ class Base(Configuration):
     # Security
     ALLOWED_HOSTS = values.ListValue([])
     SECRET_KEY = SecretFileValue(None)
-    SERVER_TO_SERVER_API_TOKENS = values.ListValue([])
 
     # Application definition
     ROOT_URLCONF = "calendars.urls"
@@ -228,7 +227,6 @@ class Base(Configuration):
     STATIC_URL = "/static/"
     STATIC_ROOT = os.path.join(DATA_DIR, "static")
     MEDIA_URL = "/media/"
-    MEDIA_URL_PREVIEW = "/media/preview/"
     MEDIA_ROOT = os.path.join(DATA_DIR, "media")
     MEDIA_BASE_URL = values.Value(
         None, environ_name="MEDIA_BASE_URL", environ_prefix=None
@@ -447,10 +445,6 @@ class Base(Configuration):
         "REDOC_DIST": "SIDECAR",
     }
 
-    TRASHBIN_CUTOFF_DAYS = values.Value(
-        30, environ_name="TRASHBIN_CUTOFF_DAYS", environ_prefix=None
-    )
-
     AUTH_USER_MODEL = "core.User"
     RSVP_TOKEN_MAX_AGE_RECURRING = values.PositiveIntegerValue(
         7776000,  # 90 days
@@ -587,12 +581,6 @@ class Base(Configuration):
         environ_prefix=None,
     )
 
-    # Easy thumbnails
-    THUMBNAIL_EXTENSION = "webp"
-    THUMBNAIL_TRANSPARENCY_EXTENSION = "webp"
-    THUMBNAIL_DEFAULT_STORAGE_ALIAS = "default"
-    THUMBNAIL_ALIASES = {}
-
     # Dramatiq
     DRAMATIQ_BROKER = {
         "BROKER": "dramatiq.brokers.redis.RedisBroker",
@@ -638,7 +626,7 @@ class Base(Configuration):
         default=True,
         environ_name="OIDC_CREATE_USER",
     )
-    OIDC_CALLBACK_CLASS = "core.authentication.views.OIDCAuthenticationCallbackView"
+    OIDC_CALLBACK_CLASS = "lasuite.oidc_login.views.OIDCAuthenticationCallbackView"
     OIDC_RP_SIGN_ALGO = values.Value(
         "RS256", environ_name="OIDC_RP_SIGN_ALGO", environ_prefix=None
     )

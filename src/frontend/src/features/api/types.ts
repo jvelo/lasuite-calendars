@@ -21,10 +21,6 @@ export interface ApiConfig {
   theme_customization?: ThemeCustomization;
 }
 
-export interface UserFilters {
-  [key: string]: unknown;
-}
-
 export interface ThemeCustomization {
   footer?: LocalizedRecord;
   [key: string]: LocalizedRecord | unknown;

@@ -19,7 +19,6 @@
  */
 
 import type {
-  IcsCalendar,
   IcsClassType,
   IcsDateObject,
   IcsEvent,
@@ -33,7 +32,6 @@ import type { CalDavCalendar, CalDavEvent } from "./types/caldav-service";
 import type {
   EventCalendarEvent,
   EventCalendarEventInput,
-  EventCalendarResource,
   EventCalendarDuration,
   CalDavToEventCalendarOptions,
   EventCalendarToCalDavOptions,
@@ -391,24 +389,6 @@ export class EventCalendarAdapter {
     return `${year}-${month}-${day}T${hours}:${minutes}:${seconds}.${ms}`;
   }
 
-  /**
-   * Convert CalDAV calendars to EventCalendar resources
-   */
-  public toEventCalendarResources(calendars: CalDavCalendar[]): EventCalendarResource[] {
-    return calendars.map((cal) => ({
-      id: cal.url,
-      title: cal.displayName || "Unnamed Calendar",
-      eventBackgroundColor: cal.color,
-      extendedProps: {
-        description: cal.description,
-        timezone: cal.timezone,
-        ctag: cal.ctag,
-        syncToken: cal.syncToken,
-        components: cal.components,
-      },
-    }));
-  }
-
   // ============================================================================
   // EventCalendar -> CalDAV Conversions
   // ============================================================================
@@ -532,49 +512,6 @@ export class EventCalendarAdapter {
   }
 
   /**
-   * Convert EventCalendar event to a full IcsCalendar object
-   */
-  public toIcsCalendar(
-    ecEvent: EventCalendarEvent | EventCalendarEventInput,
-    options?: EventCalendarToCalDavOptions,
-  ): IcsCalendar {
-    const icsEvent = this.toIcsEvent(ecEvent, options);
-
-    return {
-      prodId: "-//EventCalendarAdapter//NONSGML v1.0//EN",
-      version: "2.0",
-      events: [icsEvent],
-    };
-  }
-
-  /**
-   * Get the calendar URL from an EventCalendar event
-   */
-  public getCalendarUrl(
-    ecEvent: EventCalendarEvent,
-    defaultCalendarUrl?: string,
-  ): string | undefined {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.calendarUrl ?? defaultCalendarUrl;
-  }
-
-  /**
-   * Get the event URL from an EventCalendar event
-   */
-  public getEventUrl(ecEvent: EventCalendarEvent): string | undefined {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.eventUrl;
-  }
-
-  /**
-   * Get the ETag from an EventCalendar event
-   */
-  public getEtag(ecEvent: EventCalendarEvent): string | undefined {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.etag;
-  }
-
-  /**
    * Check if an EventCalendar event is a recurring instance
    */
   public isRecurringInstance(ecEvent: EventCalendarEvent): boolean {
@@ -582,32 +519,9 @@ export class EventCalendarAdapter {
     return extProps?.isRecurringInstance ?? false;
   }
 
-  /**
-   * Check if an EventCalendar event has recurrence rule
-   */
-  public hasRecurrenceRule(ecEvent: EventCalendarEvent): boolean {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return !!extProps?.recurrenceRule;
-  }
-
   // ============================================================================
   // Duration Conversions
   // ============================================================================
-
-  /**
-   * Convert EventCalendar duration to seconds
-   */
-  public durationToSeconds(duration: EventCalendarDuration): number {
-    let seconds = 0;
-    if (duration.years) seconds += duration.years * 365.25 * 24 * 60 * 60;
-    if (duration.months) seconds += duration.months * 30.44 * 24 * 60 * 60;
-    if (duration.weeks) seconds += duration.weeks * 7 * 24 * 60 * 60;
-    if (duration.days) seconds += duration.days * 24 * 60 * 60;
-    if (duration.hours) seconds += duration.hours * 60 * 60;
-    if (duration.minutes) seconds += duration.minutes * 60;
-    if (duration.seconds) seconds += duration.seconds;
-    return Math.round(seconds);
-  }
 
   /**
    * Convert seconds to EventCalendar duration
@@ -629,46 +543,9 @@ export class EventCalendarAdapter {
     return duration;
   }
 
-  /**
-   * Calculate duration between two EventCalendar events (for drop/resize delta)
-   */
-  public calculateDelta(
-    oldEvent: EventCalendarEvent,
-    newEvent: EventCalendarEvent,
-  ): { startDelta: EventCalendarDuration; endDelta: EventCalendarDuration } {
-    const oldStart = oldEvent.start instanceof Date ? oldEvent.start : new Date(oldEvent.start);
-    const newStart = newEvent.start instanceof Date ? newEvent.start : new Date(newEvent.start);
-    const oldEnd = oldEvent.end instanceof Date ? oldEvent.end : new Date(oldEvent.end ?? oldStart);
-    const newEnd = newEvent.end instanceof Date ? newEvent.end : new Date(newEvent.end ?? newStart);
-
-    const startDeltaMs = newStart.getTime() - oldStart.getTime();
-    const endDeltaMs = newEnd.getTime() - oldEnd.getTime();
-
-    return {
-      startDelta: this.secondsToDuration(Math.round(startDeltaMs / 1000)),
-      endDelta: this.secondsToDuration(Math.round(endDeltaMs / 1000)),
-    };
-  }
-
   // ============================================================================
   // Attendee/Organizer Helpers
   // ============================================================================
-
-  /**
-   * Get attendees from an EventCalendar event
-   */
-  public getAttendees(ecEvent: EventCalendarEvent): ExtendedAttendee[] {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.attendees ?? [];
-  }
-
-  /**
-   * Get organizer from an EventCalendar event
-   */
-  public getOrganizer(ecEvent: EventCalendarEvent): ExtendedOrganizer | undefined {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.organizer;
-  }
 
   /**
    * Set attendees on an EventCalendar event (returns new event)
@@ -686,41 +563,9 @@ export class EventCalendarAdapter {
     };
   }
 
-  /**
-   * Set organizer on an EventCalendar event (returns new event)
-   */
-  public setOrganizer(
-    ecEvent: EventCalendarEvent,
-    organizer: ExtendedOrganizer,
-  ): EventCalendarEvent {
-    return {
-      ...ecEvent,
-      extendedProps: {
-        ...ecEvent.extendedProps,
-        organizer,
-      },
-    };
-  }
-
   // ============================================================================
   // Event Property Helpers
   // ============================================================================
-
-  /**
-   * Get location from an EventCalendar event
-   */
-  public getLocation(ecEvent: EventCalendarEvent): string | undefined {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.location;
-  }
-
-  /**
-   * Get description from an EventCalendar event
-   */
-  public getDescription(ecEvent: EventCalendarEvent): string | undefined {
-    const extProps = ecEvent.extendedProps as Partial<CalDavExtendedProps> | undefined;
-    return extProps?.description;
-  }
 
   /**
    * Set location on an EventCalendar event (returns new event)
@@ -763,25 +608,6 @@ export class EventCalendarAdapter {
       }
     }
     return colorMap;
-  }
-
-  /**
-   * Apply calendar colors to events
-   */
-  public applyCalendarColors(
-    events: EventCalendarEvent[],
-    calendarColors: Map<string, string>,
-  ): EventCalendarEvent[] {
-    return events.map((event) => {
-      const calendarUrl = this.getCalendarUrl(event);
-      if (calendarUrl && calendarColors.has(calendarUrl)) {
-        return {
-          ...event,
-          backgroundColor: calendarColors.get(calendarUrl),
-        };
-      }
-      return event;
-    });
   }
 
   // ============================================================================
@@ -1086,68 +912,4 @@ export class EventCalendarAdapter {
 
     return result;
   }
-}
-
-// ============================================================================
-// Factory & Singleton
-// ============================================================================
-
-let _adapterInstance: EventCalendarAdapter | null = null;
-
-/**
- * Get or create a singleton adapter instance
- */
-export function getEventCalendarAdapter(): EventCalendarAdapter {
-  if (!_adapterInstance) {
-    _adapterInstance = new EventCalendarAdapter();
-  }
-  return _adapterInstance;
-}
-
-/**
- * Create a new adapter instance
- */
-export function createEventCalendarAdapter(): EventCalendarAdapter {
-  return new EventCalendarAdapter();
-}
-
-// ============================================================================
-// Standalone Helper Functions
-// ============================================================================
-
-/**
- * Quick conversion from CalDAV events to EventCalendar format
- */
-export function caldavToEventCalendar(
-  caldavEvents: CalDavEvent[],
-  options?: CalDavToEventCalendarOptions,
-): EventCalendarEvent[] {
-  return getEventCalendarAdapter().toEventCalendarEvents(caldavEvents, options);
-}
-
-/**
- * Quick conversion from EventCalendar event to IcsEvent
- */
-export function eventCalendarToIcs(
-  ecEvent: EventCalendarEvent | EventCalendarEventInput,
-  options?: EventCalendarToCalDavOptions,
-): IcsEvent {
-  return getEventCalendarAdapter().toIcsEvent(ecEvent, options);
-}
-
-/**
- * Quick conversion from EventCalendar event to IcsCalendar
- */
-export function eventCalendarToIcsCalendar(
-  ecEvent: EventCalendarEvent | EventCalendarEventInput,
-  options?: EventCalendarToCalDavOptions,
-): IcsCalendar {
-  return getEventCalendarAdapter().toIcsCalendar(ecEvent, options);
-}
-
-/**
- * Quick conversion from CalDAV calendars to EventCalendar resources
- */
-export function calendarsToResources(calendars: CalDavCalendar[]): EventCalendarResource[] {
-  return getEventCalendarAdapter().toEventCalendarResources(calendars);
 }

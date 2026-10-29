@@ -43,8 +43,6 @@ export function redirectToLogin() {
   window.location.replace(new URL("authenticate/", baseApiUrl()).href);
 }
 
-export type fetchAPIOptions = Record<string, never>;
-
 export const fetchAPI = async (
   input: string,
   init?: RequestInit & {

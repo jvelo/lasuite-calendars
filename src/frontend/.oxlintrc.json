@@ -5,7 +5,6 @@
     "dist/**",
     "node_modules/**",
     "src/routes.gen.ts",
-    "test-dst.js",
     "src/styles/cunningham-tokens.ts",
     "src/styles/cunningham-tokens-sass.scss"
   ],

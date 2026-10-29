@@ -7,15 +7,13 @@ from django.test import RequestFactory
 from django.test.utils import override_settings
 
 import pytest
+from lasuite.oidc_login.views import OIDCAuthenticationCallbackView
 from mozilla_django_oidc.auth import (
     OIDCAuthenticationBackend as MozillaOIDCAuthenticationBackend,
 )
 
 from core import factories
 from core.authentication.backends import OIDCAuthenticationBackend
-from core.authentication.views import (
-    OIDCAuthenticationCallbackView,
-)
 
 pytestmark = pytest.mark.django_db
 

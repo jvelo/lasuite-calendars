@@ -163,7 +163,7 @@ class ResourceAutoSchedulePlugin extends ServerPlugin
      * By setting the real DB value here at priority 200 via set(), we pre-empt it.
      *
      * Identifies resource principals by URL prefix (``principals/resources/``)
-     * — the node class returned by ``ResourcePrincipalCollection`` is just
+     * — the node class returned by ``NamedPrincipalCollection`` is just
      * ``SchedulablePrincipal`` (a thin ``CalDAV\Principal\User`` subclass)
      * which is also used for individual users, so an instanceof check on
      * any concrete class would either match users too or never match at

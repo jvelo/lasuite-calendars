@@ -43,8 +43,8 @@ function generateFaviconDataUrl(day: number): Promise<string> {
 
 /**
  * Returns a data URL for a favicon with the current day of month,
- * or null while generating. Use this in the Next.js <Head> link tag
- * so React manages the DOM and doesn't overwrite it.
+ * or null while generating. Render it in a <link> tag managed by React
+ * so React owns the DOM node and does not overwrite it.
  */
 export function useDynamicFavicon(): string | null {
   const [faviconUrl, setFaviconUrl] = useState<string | null>(null);
