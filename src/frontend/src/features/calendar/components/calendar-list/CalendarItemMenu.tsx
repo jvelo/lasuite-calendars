@@ -31,6 +31,7 @@ export const CalendarItemMenu = ({
   onDelete,
   onLeave,
   syncManaged,
+  onDeleteForMailbox,
   onShare,
   onImport,
   onSubscription,
@@ -88,6 +89,15 @@ export const CalendarItemMenu = ({
       });
     }
 
+    if (onDeleteForMailbox) {
+      items.push({
+        label: t("calendar.list.deleteForMailbox"),
+        icon: <Trash />,
+        callback: onDeleteForMailbox,
+      });
+      return items;
+    }
+
     items.push({
       label: t(onLeave && !syncManaged ? "calendar.list.leaveCalendar" : "calendar.list.delete"),
       icon: <Trash />,
@@ -103,6 +113,7 @@ export const CalendarItemMenu = ({
     onDelete,
     onLeave,
     syncManaged,
+    onDeleteForMailbox,
     onShare,
     onImport,
     onSubscription,

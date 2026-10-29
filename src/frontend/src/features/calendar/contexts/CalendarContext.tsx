@@ -14,6 +14,7 @@ import { EventCalendarAdapter } from "../services/dav/EventCalendarAdapter";
 import { caldavServerUrl } from "../utils/DavClient";
 import { addToast, ToasterItem } from "@/features/ui/components/toaster/Toaster";
 import { useAuth } from "@/features/auth/Auth";
+import { deleteMailboxCalendar as deleteMailboxCalendarApi } from "@/features/mailbox/api";
 import { belongsInMyCalendars } from "../utils/calendar-ownership";
 
 import type {
@@ -71,6 +72,11 @@ export interface CalendarContextType {
     params: { displayName?: string; color?: string; description?: string },
   ) => Promise<{ success: boolean; error?: string }>;
   deleteCalendar: (calendarUrl: string) => Promise<{ success: boolean; error?: string }>;
+  /** Deletes a mailbox calendar for every user of the mailbox. */
+  deleteMailboxCalendar: (
+    calendarUrl: string,
+    mailboxEmail: string,
+  ) => Promise<{ success: boolean; error?: string }>;
   shareCalendar: (
     calendarUrl: string,
     email: string,
@@ -275,6 +281,32 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     [caldavService, refreshCalendars],
   );
 
+  const deleteMailboxCalendar = useCallback(
+    async (
+      calendarUrl: string,
+      mailboxEmail: string,
+    ): Promise<{ success: boolean; error?: string }> => {
+      const calendarUri = decodeURIComponent(calendarUrl.replace(/\/$/, "").split("/").pop() ?? "");
+      try {
+        await deleteMailboxCalendarApi(mailboxEmail, calendarUri);
+      } catch (error) {
+        console.error("Error deleting mailbox calendar:", error);
+        return {
+          success: false,
+          error: error instanceof Error ? error.message : "Unknown error",
+        };
+      }
+      setVisibleCalendarUrls((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(calendarUrl);
+        return newSet;
+      });
+      await refreshCalendars();
+      return { success: true };
+    },
+    [refreshCalendars],
+  );
+
   const shareCalendar = useCallback(
     async (
       calendarUrl: string,
@@ -466,6 +498,7 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     createCalendar,
     updateCalendar,
     deleteCalendar,
+    deleteMailboxCalendar,
     shareCalendar,
     moveCalendar,
     goToDate,
