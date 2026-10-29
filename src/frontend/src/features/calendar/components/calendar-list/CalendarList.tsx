@@ -68,11 +68,11 @@ export const CalendarList = () => {
 
   const { user } = useAuth();
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(
-    () => !!user && loadOnboardingDismissed(user.email),
+    () => !!user && loadOnboardingDismissed(user.id),
   );
   const dismissOnboarding = () => {
     setIsOnboardingDismissed(true);
-    if (user) saveOnboardingDismissed(user.email);
+    if (user) saveOnboardingDismissed(user.id);
   };
   const canDismissOnboarding = sharedCalendars.length > 0;
   const showOnboarding =
