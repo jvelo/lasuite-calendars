@@ -1,6 +1,7 @@
 /**
  * CalendarList component - List of calendars with visibility toggles.
- * Shows onboarding modal when user has no calendars.
+ * Prompts users without an owned calendar to create one. Users with
+ * shared calendars can dismiss the prompt.
  */
 
 import { useState, useCallback } from "react";
@@ -64,9 +65,6 @@ export const CalendarList = () => {
     deleteCalendar,
   });
 
-  // Onboarding: ask the user to create a calendar when they own none.
-  // A user with shared calendars can close the prompt. The browser
-  // remembers that choice for this user.
   const { user } = useAuth();
   const [isOnboardingDismissed, setIsOnboardingDismissed] = useState(
     () => !!user && loadOnboardingDismissed(user.email),
@@ -79,7 +77,7 @@ export const CalendarList = () => {
   const showOnboarding =
     !isCalendarLoading &&
     ownedCalendars.length === 0 &&
-    !(canDismissOnboarding && isOnboardingDismissed);
+    (sharedCalendars.length === 0 || !isOnboardingDismissed);
 
   // Wrap save to handle mailbox calendar creation
   const handleSaveWithMailbox = useCallback(
@@ -268,14 +266,13 @@ export const CalendarList = () => {
         )}
       </div>
 
-      {/* Onboarding modal: shown when user has no calendars */}
       <CalendarModal
         isOpen={showOnboarding}
         mode="create"
         onClose={dismissOnboarding}
         onSave={handleSaveWithMailbox}
         isOnboarding
-        isDismissible={canDismissOnboarding}
+        canDismissOnboarding={canDismissOnboarding}
       />
 
       {/* Normal create/edit modal */}

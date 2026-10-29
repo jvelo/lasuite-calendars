@@ -1,10 +1,8 @@
 const storageKey = (email: string) => `calendar-onboarding-dismissed:${email}`;
 
 /**
- * Tell if the user closed the first-calendar prompt in this browser.
- *
- * The flag is per user, so another account on the same browser
- * still gets the prompt.
+ * Read the dismissal flag for this email in this browser.
+ * Return false when the flag is absent or storage is not available.
  */
 export const loadOnboardingDismissed = (email: string): boolean => {
   try {

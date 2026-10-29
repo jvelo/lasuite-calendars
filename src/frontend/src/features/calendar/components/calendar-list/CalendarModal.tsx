@@ -35,7 +35,7 @@ export const CalendarModal = ({
   onClose,
   onSave,
   isOnboarding = false,
-  isDismissible = false,
+  canDismissOnboarding = false,
 }: CalendarModalProps) => {
   const { t } = useTranslation();
   const { config } = useConfig();
@@ -145,7 +145,7 @@ export const CalendarModal = ({
     }
   };
 
-  const canClose = !isOnboarding || isDismissible;
+  const canClose = !isOnboarding || canDismissOnboarding;
 
   const handleClose = () => {
     if (!canClose) return;
@@ -192,7 +192,7 @@ export const CalendarModal = ({
       }
     >
       <div className="calendar-modal__content">
-        {isOnboarding && isDismissible && (
+        {isOnboarding && canDismissOnboarding && (
           <p className="calendar-modal__onboarding-text">
             {t("calendar.onboarding.sharedCalendarsHint")}
           </p>
