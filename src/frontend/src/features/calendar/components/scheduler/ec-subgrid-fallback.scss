@@ -1,0 +1,90 @@
+// Layout fallback for browsers without CSS subgrid (Chromium < 117).
+//
+// @event-calendar/core shares the column and row tracks of `.ec-main` with
+// its children through `subgrid`. Without subgrid, each child grid has one
+// track, and the days stack vertically. These rules give each child grid
+// explicit tracks that match the tracks of `.ec-main`.
+//
+// The library measures `--ec-sidebar-width` from the rendered sidebar, so a
+// broken layout gives a wrong value. The sidebar column uses a fixed width
+// instead. Child grids do not share content-sized rows, so timeline rows
+// use a fixed height.
+//
+// This file must load after the library CSS, because the `.ec-main` rules
+// have the same specificity as the library rules.
+@supports not (grid-template-columns: subgrid) {
+  .ec {
+    --ec-fallback-sidebar-width: 4rem;
+    --ec-fallback-row-height: 2.5em;
+  }
+
+  // Time grid: week, work week and day views.
+  .ec-time-grid {
+    .ec-main,
+    .ec-header,
+    .ec-all-day,
+    .ec-body {
+      grid-template-columns:
+        var(--ec-fallback-sidebar-width)
+        repeat(var(--ec-grid-cols), var(--ec-col-width));
+    }
+
+    .ec-grid,
+    .ec-events {
+      grid-template-columns: repeat(var(--ec-grid-cols), var(--ec-col-width));
+    }
+
+    .ec-body,
+    .ec-body .ec-grid,
+    .ec-body .ec-events {
+      grid-template-rows: auto;
+    }
+
+    .ec-all-day .ec-events {
+      grid-template-rows: none;
+    }
+  }
+
+  // Day grid: month view.
+  .ec-day-grid {
+    .ec-header,
+    .ec-body,
+    .ec-grid,
+    .ec-events {
+      grid-template-columns: repeat(var(--ec-grid-cols), minmax(0, 1fr));
+    }
+
+    .ec-body,
+    .ec-body .ec-grid,
+    .ec-body .ec-events {
+      grid-template-rows: repeat(var(--ec-grid-rows), var(--ec-row-height));
+    }
+  }
+
+  // Timeline: resource day view.
+  .ec-timeline {
+    .ec-main,
+    .ec-header,
+    .ec-body {
+      grid-template-columns:
+        var(--ec-fallback-sidebar-width)
+        repeat(var(--ec-grid-cols), min-content);
+    }
+
+    .ec-grid,
+    .ec-events {
+      grid-template-columns: repeat(var(--ec-grid-cols), minmax(0, 1fr));
+    }
+
+    .ec-body {
+      grid-template-rows: auto;
+    }
+
+    .ec-body .ec-sidebar,
+    .ec-body .ec-grid,
+    .ec-body .ec-events {
+      grid-template-rows: none;
+      grid-auto-rows: var(--ec-fallback-row-height);
+    }
+  }
+}

@@ -131,7 +131,8 @@
       "calendar": {
         "error": {
           "connection": "Failed to connect to the calendar server. Please try again later.",
-          "fetchCalendars": "Failed to load calendars. Please try again later."
+          "fetchCalendars": "Failed to load calendars. Please try again later.",
+          "fetchEvents": "Failed to load some events. Please try again later."
         },
         "views": {
           "day": "Day",
@@ -1089,7 +1090,8 @@
       "calendar": {
         "error": {
           "connection": "Impossible de se connecter au serveur de calendrier. Veuillez réessayer plus tard.",
-          "fetchCalendars": "Impossible de charger les calendriers. Veuillez réessayer plus tard."
+          "fetchCalendars": "Impossible de charger les calendriers. Veuillez réessayer plus tard.",
+          "fetchEvents": "Impossible de charger certains événements. Veuillez réessayer plus tard."
         },
         "views": {
           "day": "Jour",
@@ -1794,7 +1796,8 @@
       "calendar": {
         "error": {
           "connection": "Kan geen verbinding maken met de kalenderserver. Probeer het later opnieuw.",
-          "fetchCalendars": "Kan kalenders niet laden. Probeer het later opnieuw."
+          "fetchCalendars": "Kan kalenders niet laden. Probeer het later opnieuw.",
+          "fetchEvents": "Kan sommige evenementen niet laden. Probeer het later opnieuw."
         },
         "views": {
           "day": "Dag",

@@ -1,14 +1,25 @@
 import { defineConfig, type Plugin } from "vite";
 import react from "@vitejs/plugin-react";
+import legacy from "@vitejs/plugin-legacy";
 import { tanstackRouter } from "@tanstack/router-plugin/vite";
 import { visualizer } from "rollup-plugin-visualizer";
 import path from "node:path";
+
+import pkg from "./package.json";
 
 export default defineConfig({
   plugins: [
     // See ./tsr.config.json for tanstackRouter config
     tanstackRouter(),
     react(),
+    // Supported browsers load the modern bundle.
+    // Inject usage-based polyfills for the declared browser targets.
+    // No separate legacy bundle is needed.
+    legacy({
+      renderLegacyChunks: false,
+      modernPolyfills: true,
+      modernTargets: pkg.browserslist,
+    }),
     // Opt-in bundle analyzer: emits bundle-stats.html next to the project
     // root when ANALYZE=1. Run via `npm run analyze`.
     process.env.ANALYZE === "1" &&

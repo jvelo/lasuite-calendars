@@ -13,6 +13,7 @@
  */
 
 import "@event-calendar/core/index.css";
+import "./ec-subgrid-fallback.scss";
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { MobileToolbar } from "./mobile/MobileToolbar";

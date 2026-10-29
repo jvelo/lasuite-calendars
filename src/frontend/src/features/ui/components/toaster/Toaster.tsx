@@ -1,5 +1,5 @@
 import { Button } from "@gouvfr-lasuite/ui-components";
-import { ToastContainer, ToastContentProps, toast } from "react-toastify";
+import { ToastContainer, ToastContentProps, ToastOptions, toast } from "react-toastify";
 import { XMark } from "@gouvfr-lasuite/ui-components/icons";
 
 export const Toaster = () => {
@@ -35,7 +35,7 @@ export const ToasterItem = ({
   );
 };
 
-export const addToast = (children: React.ReactNode, options: Parameters<typeof toast>[1] = {}) => {
+export const addToast = (children: React.ReactNode, options: ToastOptions = {}) => {
   return toast(children, {
     position: "bottom-center",
     closeButton: false,
@@ -46,8 +46,8 @@ export const addToast = (children: React.ReactNode, options: Parameters<typeof t
   });
 };
 
-export const addErrorToast = (message: string) => {
-  return addToast(<ToasterItem type="error">{message}</ToasterItem>);
+export const addErrorToast = (message: string, options: ToastOptions = {}) => {
+  return addToast(<ToasterItem type="error">{message}</ToasterItem>, options);
 };
 
 export const addSuccessToast = (message: string) => {
