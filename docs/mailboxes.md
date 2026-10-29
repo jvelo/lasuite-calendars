@@ -30,10 +30,7 @@ exclusively via `POST /internal-api/calendars/`.
 
 **Calendars** are never auto-created. The user must go through
 `POST /api/v1.0/setup/` to create their first calendar. The frontend
-shows the setup modal when the user owns no calendar. Mailbox calendars
-count as owned. Calendars that other users share with them do not
-count, but a user who has shared calendars can close the modal. The
-browser remembers that choice.
+shows the setup modal when the user owns no calendar.
 
 **The Django CalDAV proxy** adds `X-LS-User: {oidc_email}` to every
 request. SabreDAV uses this to authenticate the user and scope access.
@@ -138,9 +135,7 @@ same endpoint: `POST /api/v1.0/setup/`.
    - Team mailboxes (`contact@company.com`, role=admin)
    - Or nothing, if Messages integration is disabled or she has no mailboxes
 3. Frontend detects the user owns no calendar → shows the creation modal
-   in onboarding mode (`isOnboarding=true`). A user who arrives through
-   a share also sees the modal, and can close it to use the shared
-   calendars first.
+   in onboarding mode (`isOnboarding=true`).
 4. The modal shows a mailbox selector dropdown populated from step 2.
    If the user has no mailboxes, the selector is hidden and the user can
    only create a standalone calendar.
