@@ -4,7 +4,7 @@
  * Reuses types from ts-ics where possible to avoid duplication.
  */
 
-import type { IcsCalendar, IcsEvent, IcsAttendee } from "ts-ics";
+import type { IcsAttendee, IcsAttendeePartStatusType, IcsCalendar, IcsEvent } from "ts-ics";
 
 /** Attendee type from ts-ics */
 export type CalDavAttendee = IcsAttendee;
@@ -196,4 +196,26 @@ export type CalDavResponse<T = void> = {
   data?: T;
   error?: string;
   status?: number;
+};
+
+/** A reason that prevents an attendee from responding to an invitation. */
+export type RsvpBlocker = "cancelled" | "deleted" | "notAttendee";
+
+/** The VEVENTs of one event in the server copy, found once per response. */
+export interface RsvpEvent {
+  /** All VEVENTs with the UID of the event. */
+  instances: IcsEvent[];
+  /** The VEVENT without RECURRENCE-ID. */
+  master?: IcsEvent;
+  /** The override of the occurrence, if any. */
+  override?: IcsEvent;
+}
+
+/** A response of an attendee to an invitation. */
+export type InvitationResponse = {
+  uid: string;
+  attendeeEmail: string;
+  partstat: IcsAttendeePartStatusType;
+  /** The instant of the occurrence. Omit to respond to the series. */
+  occurrence?: Date;
 };
