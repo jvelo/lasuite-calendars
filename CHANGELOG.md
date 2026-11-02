@@ -10,6 +10,10 @@ and this project adheres to
 
 ## [Unreleased]
 
+### Added
+
+- ✨(global) let mailbox admins delete a mailbox calendar with CalDAV
+
 ## [0.1.0] - 2026-06-18
 
 First public release.

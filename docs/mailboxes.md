@@ -83,6 +83,11 @@ Django then:
      | `sender`      | `read-write`    |
      | `admin`       | `read-write`    |
 
+   Each share also carries the Messages role. SabreDAV stores it in
+   `calendarinstances.mailbox_role`, because `sender` and `admin` give
+   the same CalDAV privilege. See
+   [Deleting a mailbox calendar](#deleting-a-mailbox-calendar).
+
 3. Calls `POST /internal-api/sync-mailbox-acls/` with `full_sync_users` set to the user
    and the full list of desired shares. The endpoint computes a diff
    against existing `sync-managed` shares and applies minimal changes:
@@ -242,6 +247,48 @@ To remove the calendar from a user's list, remove their access to the
 mailbox in Messages. These instances expose `LS:calendar-sync-managed`,
 so clients can disable the delete action. Manual shares do not have it.
 
+### Deleting a mailbox calendar
+
+A mailbox admin can delete a mailbox calendar for every user of the
+mailbox. The client sends a CalDAV `DELETE` to the **owner instance**,
+under the calendar home of the mailbox, not to the user's own instance:
+
+```
+DELETE /caldav/calendars/mailboxes/contact@company.com/default/
+```
+
+SabreDAV then deletes the calendar, its events and all its instances.
+The `DELETE` on the user's own instance keeps its meaning ("remove my
+copy") and stays refused for sync-managed instances.
+
+The pieces:
+
+- **`mailbox_role`**: a column of `calendarinstances` (migration
+  `003-add-calendarinstances-mailbox-role.sql`). The Messages sync
+  writes the role of the user (`admin`, `sender`, `editor` or `viewer`)
+  on each sync-managed instance. It is necessary because the sync maps
+  `sender` and `admin` to the same `access` (read-write).
+- **`LS:mailbox-role`**: exposes the column on a sync-managed instance.
+  It is read-only: `ShareAccessPlugin` refuses a `PROPPATCH` on it.
+- **`CS:shared-url`**: on the sharee instances of a mailbox calendar,
+  the URL of the owner instance (CalendarServer sharing spec).
+  `ShareAccessPlugin` computes it from the owner row. Clients must
+  request it by name: it is not part of `allprop`.
+- **ACL**: the `DELETE` of a calendar requires `{DAV:}unbind` on the
+  calendar home. On the home of a mailbox, `CustomCalendarHome::getACL`
+  grants it to each user with a sync-managed instance and
+  `mailbox_role = 'admin'`. A sender or a viewer gets a 403.
+
+The CalDAV proxy requires the `can_access` entitlement for a `DELETE`
+on a collection, as for other calendar deletes.
+
+The role is as fresh as the last sync for the user (app open, the
+`sync_all_mailbox_acls` task, or the creation of a calendar for the
+mailbox). A user demoted in Messages keeps the delete right until then.
+
+The delete sends no CANCEL to the attendees of the events, as for the
+delete of other calendars.
+
 ### Restriction on MAILBOX calendar sharing
 
 `MailboxPlugin` enforces that native `CS:share` POST
@@ -333,15 +380,17 @@ each call (first uses `default` URI, subsequent calls use a UUID).
 {
   "shares": [
     {"user_email": "alice@co", "mailbox_email": "contact@co",
-     "calendar_uri": "default", "privilege": "read-write"},
+     "privilege": "read-write", "role": "admin"},
     {"user_email": "bob@co", "mailbox_email": "contact@co",
-     "calendar_uri": "default", "privilege": "read"}
+     "privilege": "read", "role": "viewer"}
   ],
   "full_sync_users": ["alice@co"]
 }
 ```
 `shares` is a flat list of all desired `sync-managed` shares across
-multiple users. `full_sync_users` lists which users should have stale
+multiple users. `role` is optional: the Messages role, stored in
+`mailbox_role`. A role outside `viewer`, `editor`, `sender` and `admin`
+gives a 400. `full_sync_users` lists which users should have stale
 shares removed (users not in the list only get additive upserts).
 Batch-fetches owner calendars and existing shares in two queries,
 computes diff, applies minimal writes in one transaction.
