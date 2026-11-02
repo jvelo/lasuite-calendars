@@ -29,6 +29,9 @@ use Sabre\VObject;
 
 class InternalApiPlugin extends ServerPlugin
 {
+    /** Messages roles that the mailbox ACL sync can store. */
+    const MAILBOX_ROLES = ['viewer', 'editor', 'sender', 'admin'];
+
     /** @var Server */
     protected $server;
 
@@ -791,9 +794,9 @@ class InternalApiPlugin extends ServerPlugin
      * Body: {
      *   "shares": [
      *     {"user_email": "alice@co", "mailbox_email": "contact@co",
-     *      "privilege": "read-write"},
+     *      "privilege": "read-write", "role": "admin"},
      *     {"user_email": "bob@co", "mailbox_email": "contact@co",
-     *      "privilege": "read"}
+     *      "privilege": "read", "role": "viewer"}
      *   ],
      *   "full_sync_users": ["alice@co"]
      * }
@@ -804,6 +807,10 @@ class InternalApiPlugin extends ServerPlugin
      * calendars (the second create allocates a UUID URI), and Messages
      * tracks access per mailbox — not per calendar — so the share
      * naturally applies to all of them.
+     *
+     * "role" is optional: the Messages role of the user on the mailbox.
+     * It is stored in ``mailbox_role``. A mailbox admin can delete the
+     * calendars of the mailbox (see CustomCalendarHome::getACL).
      *
      * "shares" is a flat list of all desired sync-managed shares.
      * "full_sync_users" lists users whose stale shares should be removed
@@ -869,6 +876,17 @@ class InternalApiPlugin extends ServerPlugin
                 $response->setBody(json_encode([
                     'error' => "shares[$i] invalid privilege: "
                         . "must be 'read' or 'read-write'",
+                ]));
+                return false;
+            }
+            if (isset($share['role'])
+                && !in_array($share['role'], self::MAILBOX_ROLES, true)
+            ) {
+                $response->setStatus(400);
+                $response->setHeader('Content-Type', 'application/json');
+                $response->setBody(json_encode([
+                    'error' => "shares[$i] invalid role: must be one of "
+                        . implode(', ', self::MAILBOX_ROLES),
                 ]));
                 return false;
             }
@@ -941,7 +959,7 @@ class InternalApiPlugin extends ServerPlugin
             );
             $ph = implode(',', array_fill(0, count($userPrincipals), '?'));
             $stmt = $this->pdo->prepare(
-                'SELECT id, principaluri, calendarid, access FROM calendarinstances '
+                'SELECT id, principaluri, calendarid, access, mailbox_role FROM calendarinstances '
                 . 'WHERE principaluri IN (' . $ph . ') AND is_sync_managed = TRUE'
             );
             $stmt->execute($userPrincipals);
@@ -962,6 +980,7 @@ class InternalApiPlugin extends ServerPlugin
                 $userEmail = $share['user_email'];
                 $mailboxEmail = $share['mailbox_email'];
                 $privilege = $share['privilege'];
+                $role = $share['role'] ?? null;
 
                 $mailboxCalendars = $ownerCalendarsByMailbox[$mailboxEmail] ?? [];
                 if (empty($mailboxCalendars)) {
@@ -975,6 +994,7 @@ class InternalApiPlugin extends ServerPlugin
                     $calendarId = (int)$ownerCal['calendarid'];
                     $desired[$principal][$calendarId] = [
                         'access' => $access,
+                        'role' => $role,
                         'displayname' => $ownerCal['displayname'],
                         'share_href' => 'mailto:' . $userEmail,
                         'share_displayname' => $userEmail,
@@ -993,11 +1013,12 @@ class InternalApiPlugin extends ServerPlugin
             $upsertStmt = $this->pdo->prepare(
                 'INSERT INTO calendarinstances '
                 . '(calendarid, principaluri, access, uri, displayname, calendarcolor, '
-                . 'share_href, share_displayname, share_invitestatus, transparent, is_sync_managed) '
-                . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, 0, TRUE) '
+                . 'share_href, share_displayname, share_invitestatus, transparent, '
+                . 'is_sync_managed, mailbox_role) '
+                . 'VALUES (?, ?, ?, ?, ?, ?, ?, ?, 2, 0, TRUE, ?) '
                 . 'ON CONFLICT (principaluri, calendarid) '
                 . 'DO UPDATE SET access = EXCLUDED.access, share_href = EXCLUDED.share_href, '
-                . 'is_sync_managed = TRUE'
+                . 'is_sync_managed = TRUE, mailbox_role = EXCLUDED.mailbox_role'
             );
 
             // 6. Apply diff per user
@@ -1009,8 +1030,10 @@ class InternalApiPlugin extends ServerPlugin
 
                 // Upsert changed/new shares
                 foreach ($userDesired as $calendarId => $d) {
-                    if (isset($userExisting[$calendarId])
-                        && (int)$userExisting[$calendarId]['access'] === $d['access']) {
+                    $current = $userExisting[$calendarId] ?? null;
+                    if ($current
+                        && (int)$current['access'] === $d['access']
+                        && $current['mailbox_role'] === $d['role']) {
                         continue;
                     }
                     // UUID for the uri column (same as SabreDAV's native CS:share).
@@ -1019,7 +1042,7 @@ class InternalApiPlugin extends ServerPlugin
                     $upsertStmt->execute([
                         $calendarId, $principal, $d['access'], UUIDUtil::getUUID(),
                         $d['displayname'], $d['color'],
-                        $d['share_href'], $d['share_displayname'],
+                        $d['share_href'], $d['share_displayname'], $d['role'],
                     ]);
                 }
 

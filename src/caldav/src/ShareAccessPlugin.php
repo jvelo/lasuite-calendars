@@ -36,6 +36,7 @@ use Sabre\DAV\INode;
 use Sabre\DAV\PropFind;
 use Sabre\DAV\Server;
 use Sabre\DAV\ServerPlugin;
+use Sabre\DAV\Xml\Property\Href;
 use Sabre\Xml\Element\XmlFragment;
 
 class ShareAccessPlugin extends ServerPlugin
@@ -83,6 +84,21 @@ class ShareAccessPlugin extends ServerPlugin
      */
     const SYNC_MANAGED_PROP = '{http://lasuite.numerique.gouv.fr/ns/}calendar-sync-managed';
 
+    /**
+     * Custom DAV property on a sync-managed calendar instance: the
+     * Messages role of the user on the mailbox (admin, sender, editor
+     * or viewer). The Messages sync writes it.
+     */
+    const MAILBOX_ROLE_PROP = '{http://lasuite.numerique.gouv.fr/ns/}mailbox-role';
+
+    /**
+     * CalendarServer sharing property on a sharee instance: the URL of
+     * the owner instance. SabreDAV declares it as protected but does
+     * not return it. We return it for mailbox calendars, where a
+     * mailbox admin deletes the calendar with a DELETE on this URL.
+     */
+    const SHARED_URL_PROP = '{http://calendarserver.org/ns/}shared-url';
+
     /** @var \PDO */
     private $pdo;
 
@@ -111,6 +127,8 @@ class ShareAccessPlugin extends ServerPlugin
         $server->on('propFind', [$this, 'propFindShareAccessMap'], 200);
         $server->on('propFind', [$this, 'propFindOwnerType'], 200);
         $server->on('propFind', [$this, 'propFindSyncManaged'], 200);
+        $server->on('propFind', [$this, 'propFindMailboxRole'], 200);
+        $server->on('propFind', [$this, 'propFindSharedUrl'], 200);
         // Priority 90: run before PropertyStorage (default 100) so a
         // PROPPATCH on our LS properties is rejected instead of being
         // silently persisted as a dead property. These properties are
@@ -130,6 +148,7 @@ class ShareAccessPlugin extends ServerPlugin
             self::SHARE_ACCESS_MAP_PROP,
             self::OWNER_TYPE_PROP,
             self::SYNC_MANAGED_PROP,
+            self::MAILBOX_ROLE_PROP,
         ] as $prop) {
             $propPatch->handle($prop, function () {
                 return 403;
@@ -424,5 +443,94 @@ class ShareAccessPlugin extends ServerPlugin
             }
             return null;
         });
+    }
+
+    /**
+     * Expose the Messages role of a sync-managed calendar instance. For
+     * other instances, the property is not available.
+     */
+    public function propFindMailboxRole(PropFind $propFind, INode $node)
+    {
+        if (!$node instanceof ICalendar) {
+            return;
+        }
+
+        $propFind->handle(self::MAILBOX_ROLE_PROP, function () use ($node) {
+            $instanceId = $this->getCalendarInfo($node)['id'][1] ?? null;
+            if (!$instanceId) {
+                return null;
+            }
+
+            try {
+                $stmt = $this->pdo->prepare(
+                    'SELECT mailbox_role FROM calendarinstances '
+                    . 'WHERE id = ? AND is_sync_managed = TRUE'
+                );
+                $stmt->execute([$instanceId]);
+                return $stmt->fetchColumn() ?: null;
+            } catch (\Exception $e) {
+                error_log("[ShareAccessPlugin] propFindMailboxRole error: " . $e->getMessage());
+            }
+            return null;
+        });
+    }
+
+    /**
+     * Expose CS:shared-url on the sharee instances of a mailbox calendar.
+     *
+     * The value is the URL of the owner instance, under the calendar
+     * home of the mailbox. Clients must request it by name: the
+     * CalendarServer spec excludes it from allprop.
+     */
+    public function propFindSharedUrl(PropFind $propFind, INode $node)
+    {
+        if (!$node instanceof MailboxSharedCalendar) {
+            return;
+        }
+
+        $propFind->handle(self::SHARED_URL_PROP, function () use ($node) {
+            $calendarId = $this->getCalendarInfo($node)['id'][0] ?? null;
+            if (!$calendarId) {
+                return null;
+            }
+
+            try {
+                $stmt = $this->pdo->prepare(
+                    'SELECT principaluri, uri FROM calendarinstances '
+                    . 'WHERE calendarid = ? AND access = 1 LIMIT 1'
+                );
+                $stmt->execute([$calendarId]);
+                $owner = $stmt->fetch(\PDO::FETCH_ASSOC);
+            } catch (\Exception $e) {
+                error_log("[ShareAccessPlugin] propFindSharedUrl error: " . $e->getMessage());
+                return null;
+            }
+            if (!$owner || strpos($owner['principaluri'], 'principals/') !== 0) {
+                return null;
+            }
+
+            // principals/mailboxes/{email} has its calendars under
+            // calendars/mailboxes/{email}/.
+            $home = 'calendars/' . substr($owner['principaluri'], strlen('principals/'));
+            return new Href($home . '/' . $owner['uri'] . '/');
+        });
+    }
+
+    /**
+     * Return the calendarInfo array of a calendar node. SabreDAV keeps it
+     * protected and has no getter for it.
+     */
+    private function getCalendarInfo(INode $node): array
+    {
+        try {
+            $reflection = new \ReflectionObject($node);
+            if (!$reflection->hasProperty('calendarInfo')) {
+                return [];
+            }
+            $info = $reflection->getProperty('calendarInfo')->getValue($node);
+            return is_array($info) ? $info : [];
+        } catch (\Exception $e) {
+            return [];
+        }
     }
 }

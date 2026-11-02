@@ -7,6 +7,10 @@
  * instances whose owner is a MAILBOX principal. This grants {DAV:}share
  * privilege to read-write sharees of mailbox calendars, allowing them
  * to manage read-only shares via standard CS:share without proxy hacks.
+ *
+ * On the calendar home of a mailbox, getACL() also grants {DAV:}unbind
+ * to the mailbox admins, so that they can delete a mailbox calendar for
+ * every user with a DELETE on its owner URL.
  */
 
 namespace Calendars\SabreDav;
@@ -28,6 +32,57 @@ class CustomCalendarHome extends CalendarHome
     public function setPdo(\PDO $pdo)
     {
         $this->pdo = $pdo;
+    }
+
+    /**
+     * Add {DAV:}unbind for the mailbox admins on the home of a mailbox.
+     *
+     * The DELETE of a calendar requires {DAV:}unbind on its parent, the
+     * calendar home. Only the mailbox principal has it by default, and
+     * no person signs in as a mailbox. A mailbox admin is a user with a
+     * sync-managed instance of a calendar of this home and
+     * ``mailbox_role = 'admin'``. The Messages sync writes this role.
+     */
+    public function getACL()
+    {
+        $acl = parent::getACL();
+        if (!$this->pdo || !$this->isMailboxHome()) {
+            return $acl;
+        }
+
+        foreach ($this->getMailboxAdmins() as $principalUri) {
+            $acl[] = [
+                'privilege' => '{DAV:}unbind',
+                'principal' => $principalUri,
+                'protected' => true,
+            ];
+        }
+        return $acl;
+    }
+
+    private function isMailboxHome(): bool
+    {
+        return strpos($this->principalInfo['uri'] ?? '', 'principals/mailboxes/') === 0;
+    }
+
+    /**
+     * @return string[] Principal URIs of the admins of this mailbox.
+     */
+    private function getMailboxAdmins(): array
+    {
+        try {
+            $stmt = $this->pdo->prepare(
+                'SELECT DISTINCT ci.principaluri FROM calendarinstances ci '
+                . 'JOIN calendarinstances o ON o.calendarid = ci.calendarid '
+                . 'WHERE o.principaluri = ? AND o.access = 1 '
+                . "AND ci.is_sync_managed = TRUE AND ci.mailbox_role = 'admin'"
+            );
+            $stmt->execute([$this->principalInfo['uri']]);
+            return $stmt->fetchAll(\PDO::FETCH_COLUMN);
+        } catch (\Exception $e) {
+            error_log("[CustomCalendarHome] mailbox admins DB error: " . $e->getMessage());
+            return [];
+        }
     }
 
     /**

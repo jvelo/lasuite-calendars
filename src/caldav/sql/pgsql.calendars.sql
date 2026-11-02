@@ -56,7 +56,8 @@ CREATE TABLE calendarinstances (
     share_displayname VARCHAR(255),
     share_invitestatus SMALLINT NOT NULL DEFAULT '2', --  '1 = noresponse, 2 = accepted, 3 = declined, 4 = invalid'
     is_sync_managed BOOLEAN NOT NULL DEFAULT FALSE,
-    share_access_level VARCHAR(50)
+    share_access_level VARCHAR(50),
+    mailbox_role VARCHAR(20) -- Messages role on a sync-managed instance
 );
 
 ALTER TABLE ONLY calendarinstances
