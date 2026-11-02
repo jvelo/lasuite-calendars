@@ -1,16 +1,17 @@
 import type { IcsAttendeePartStatusType, IcsDateObject, IcsEvent } from "ts-ics";
 
-import type { RsvpBlocker, RsvpEvent } from "../types/caldav-service";
-import { getEventCalendarAdapter } from "../EventCalendarAdapter";
+import type { RsvpBlocker } from "../types/caldav-service";
+import { toWallClock } from "./timezone";
 
-/**
- * Give the wall-clock time of `date` in `timezone`. The result stores
- * that time in UTC fields ("fake UTC"), so 10:00 in Paris becomes 10:00Z.
- */
-const toWallClock = (date: Date, timezone: string): Date => {
-  const c = getEventCalendarAdapter().getDateComponentsInTimezone(date, timezone);
-  return new Date(Date.UTC(c.year, c.month - 1, c.day, c.hours, c.minutes, c.seconds));
-};
+/** The VEVENTs of one event in the server copy, found once per response. */
+export interface RsvpEvent {
+  /** All VEVENTs with the UID of the event. */
+  instances: IcsEvent[];
+  /** The VEVENT without RECURRENCE-ID. */
+  master?: IcsEvent;
+  /** The override of the occurrence, if any. */
+  override?: IcsEvent;
+}
 
 const moveTo = (value: IcsDateObject, date: Date): IcsDateObject => ({
   ...value,
@@ -64,6 +65,21 @@ export const toSeriesWallClock = (master: IcsEvent | undefined, instant: Date): 
     : toWallClock(instant, start.local.timezone);
 };
 
+/** Copy the event with a new PARTSTAT for the attendee. */
+export const withPartstat = (
+  event: IcsEvent,
+  attendeeEmail: string,
+  partstat: IcsAttendeePartStatusType,
+): IcsEvent => {
+  const email = attendeeEmail.toLowerCase();
+  return {
+    ...event,
+    attendees: event.attendees?.map((a) =>
+      a.email.toLowerCase() === email ? { ...a, partstat } : a,
+    ),
+  };
+};
+
 /**
  * Build the event data of the response to one occurrence. The base is the
  * override of the occurrence. If there is no override, the base is a copy
@@ -80,15 +96,7 @@ export const buildOccurrenceReply = (
   partstat: IcsAttendeePartStatusType,
 ): IcsEvent | undefined => {
   const base = override ?? (master && occurrenceOf(master, instant));
-  if (!base) return undefined;
-
-  const email = attendeeEmail.toLowerCase();
-  return {
-    ...base,
-    attendees: base.attendees?.map((a) =>
-      a.email.toLowerCase() === email ? { ...a, partstat } : a,
-    ),
-  };
+  return base && withPartstat(base, attendeeEmail, partstat);
 };
 
 /**

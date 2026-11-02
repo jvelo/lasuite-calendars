@@ -721,8 +721,8 @@ export const useSchedulerHandlers = ({
         console.error("Error responding to invitation:", result.error);
         throw new Error(result.error);
       }
-      const blocker = result.data?.blocker;
-      if (blocker) {
+      if (result.data?.kind === "blocked") {
+        const { blocker } = result.data;
         addErrorToast(t(RSVP_BLOCKER_MESSAGE_KEYS[blocker]));
         calendarRef.current?.refetchEvents();
         throw new Error(`Cannot respond to invitation: ${blocker}`);

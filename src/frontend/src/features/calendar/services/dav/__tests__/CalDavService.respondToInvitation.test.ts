@@ -33,9 +33,7 @@ const setup = (events: IcsEvent[], occurrenceDates: Date[] = []) => {
     fetchOccurrenceDates: vi
       .spyOn(service, "fetchOccurrenceDates")
       .mockResolvedValue({ success: true, data: occurrenceDates }),
-    respondToMeeting: vi
-      .spyOn(service, "respondToMeeting")
-      .mockResolvedValue({ success: true } as never),
+    updateEvent: vi.spyOn(service, "updateEvent").mockResolvedValue({ success: true }),
     createOverrideInstance: vi
       .spyOn(service, "createOverrideInstance")
       .mockResolvedValue({ success: true }),
@@ -51,14 +49,15 @@ describe("CalDavService.respondToInvitation", () => {
 
     const result = await s.service.respondToInvitation(URL, response);
 
-    expect(result).toEqual({ success: true, data: { blocker: null } });
-    expect(s.respondToMeeting).toHaveBeenCalledWith(
-      URL,
-      expect.objectContaining({ uid: UID }),
-      USER,
-      "ACCEPTED",
-      "etag-1",
-    );
+    expect(result).toEqual({ success: true, data: { kind: "responded" } });
+    expect(s.updateEvent).toHaveBeenCalledWith({
+      eventUrl: URL,
+      event: expect.objectContaining({
+        uid: UID,
+        attendees: [{ email: USER, partstat: "ACCEPTED" }],
+      }),
+      etag: "etag-1",
+    });
   });
 
   it("responds to a scheduled occurrence with an override", async () => {
@@ -66,9 +65,9 @@ describe("CalDavService.respondToInvitation", () => {
 
     const result = await s.service.respondToInvitation(URL, { ...response, occurrence: SECOND });
 
-    expect(result.data?.blocker).toBeNull();
+    expect(result.data).toEqual({ kind: "responded" });
     expect(s.createOverrideInstance).toHaveBeenCalledOnce();
-    expect(s.respondToMeeting).not.toHaveBeenCalled();
+    expect(s.updateEvent).not.toHaveBeenCalled();
   });
 
   it("refuses an occurrence that the expansion does not contain", async () => {
@@ -76,7 +75,7 @@ describe("CalDavService.respondToInvitation", () => {
 
     const result = await s.service.respondToInvitation(URL, { ...response, occurrence: SECOND });
 
-    expect(result).toEqual({ success: true, data: { blocker: "cancelled" } });
+    expect(result).toEqual({ success: true, data: { kind: "blocked", blocker: "cancelled" } });
     expect(s.createOverrideInstance).not.toHaveBeenCalled();
   });
 
@@ -86,28 +85,28 @@ describe("CalDavService.respondToInvitation", () => {
 
     const result = await s.service.respondToInvitation(URL, response);
 
-    expect(result.data?.blocker).toBe("deleted");
+    expect(result.data).toEqual({ kind: "blocked", blocker: "deleted" });
   });
 
   it("reads the event again and retries once on a 412", async () => {
     const s = setup([master()]);
-    s.respondToMeeting.mockResolvedValueOnce({ success: false, status: 412 });
+    s.updateEvent.mockResolvedValueOnce({ success: false, status: 412 });
 
     const result = await s.service.respondToInvitation(URL, response);
 
     expect(result.success).toBe(true);
     expect(s.fetchEvent).toHaveBeenCalledTimes(2);
-    expect(s.respondToMeeting).toHaveBeenCalledTimes(2);
+    expect(s.updateEvent).toHaveBeenCalledTimes(2);
   });
 
   it("fails after a second 412", async () => {
     const s = setup([master()]);
-    s.respondToMeeting.mockResolvedValue({ success: false, status: 412 });
+    s.updateEvent.mockResolvedValue({ success: false, status: 412 });
 
     const result = await s.service.respondToInvitation(URL, response);
 
     expect(result.success).toBe(false);
     expect(result.status).toBe(412);
-    expect(s.respondToMeeting).toHaveBeenCalledTimes(2);
+    expect(s.updateEvent).toHaveBeenCalledTimes(2);
   });
 });

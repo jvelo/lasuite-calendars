@@ -156,17 +156,23 @@ export type CalDavShareResponse = {
 };
 
 // ============================================================================
-// Scheduling (iTIP) Types — used by respondToMeeting
+// Scheduling (iTIP) Types
 // ============================================================================
 
-export type SchedulingResponse = {
-  success: boolean;
-  responses: {
-    recipient: string;
-    status: "delivered" | "failed" | "pending";
-    error?: string;
-  }[];
+/** A reason that prevents an attendee from responding to an invitation. */
+export type RsvpBlocker = "cancelled" | "deleted" | "notAttendee";
+
+/** A response of an attendee to an invitation. */
+export type InvitationResponse = {
+  uid: string;
+  attendeeEmail: string;
+  partstat: IcsAttendeePartStatusType;
+  /** The instant of the occurrence. Omit to respond to the series. */
+  occurrence?: Date;
 };
+
+/** The result of a response to an invitation. */
+export type InvitationOutcome = { kind: "responded" } | { kind: "blocked"; blocker: RsvpBlocker };
 
 // ============================================================================
 // FreeBusy Types
@@ -196,26 +202,4 @@ export type CalDavResponse<T = void> = {
   data?: T;
   error?: string;
   status?: number;
-};
-
-/** A reason that prevents an attendee from responding to an invitation. */
-export type RsvpBlocker = "cancelled" | "deleted" | "notAttendee";
-
-/** The VEVENTs of one event in the server copy, found once per response. */
-export interface RsvpEvent {
-  /** All VEVENTs with the UID of the event. */
-  instances: IcsEvent[];
-  /** The VEVENT without RECURRENCE-ID. */
-  master?: IcsEvent;
-  /** The override of the occurrence, if any. */
-  override?: IcsEvent;
-}
-
-/** A response of an attendee to an invitation. */
-export type InvitationResponse = {
-  uid: string;
-  attendeeEmail: string;
-  partstat: IcsAttendeePartStatusType;
-  /** The instant of the occurrence. Omit to respond to the series. */
-  occurrence?: Date;
 };
