@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, type Ref } from "react";
 import { ChevronDown, ChevronUp } from "@gouvfr-lasuite/ui-components/icons";
 
 interface SectionRowProps {
@@ -12,6 +12,7 @@ interface SectionRowProps {
   children?: ReactNode;
   alwaysOpen?: boolean;
   iconAlign?: "center" | "flex-start";
+  ref?: Ref<HTMLDivElement>;
 }
 
 export const SectionRow = ({
@@ -25,12 +26,13 @@ export const SectionRow = ({
   children,
   alwaysOpen = false,
   iconAlign = "center",
+  ref,
 }: SectionRowProps) => {
   const iconAlignClass = iconAlign === "flex-start" ? "section-row--icon-start" : "";
 
   if (alwaysOpen) {
     return (
-      <div className={`section-row section-row--always-open ${iconAlignClass}`}>
+      <div ref={ref} className={`section-row section-row--always-open ${iconAlignClass}`}>
         <div className="section-row__icon">{icon}</div>
         <div className="section-row__body">{children}</div>
       </div>
@@ -41,6 +43,7 @@ export const SectionRow = ({
 
   return (
     <div
+      ref={ref}
       className={`section-row ${isExpanded ? "section-row--expanded" : ""} ${
         isEmpty ? "section-row--empty" : ""
       } ${iconAlignClass}`}
