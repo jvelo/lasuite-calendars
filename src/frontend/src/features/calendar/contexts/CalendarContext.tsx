@@ -71,6 +71,8 @@ export interface CalendarContextType {
     params: { displayName?: string; color?: string; description?: string },
   ) => Promise<{ success: boolean; error?: string }>;
   deleteCalendar: (calendarUrl: string) => Promise<{ success: boolean; error?: string }>;
+  /** Deletes a mailbox calendar for every user of the mailbox. */
+  deleteMailboxCalendar: (calendarUrl: string) => Promise<{ success: boolean; error?: string }>;
   shareCalendar: (
     calendarUrl: string,
     email: string,
@@ -275,6 +277,29 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     [caldavService, refreshCalendars],
   );
 
+  const deleteMailboxCalendar = useCallback(
+    async (calendarUrl: string): Promise<{ success: boolean; error?: string }> => {
+      const result = await caldavService.deleteMailboxCalendar(calendarUrl);
+      if (!result.success) {
+        // The role can have changed in Messages since the last fetch.
+        // A refresh hides the action when the user is no longer an admin.
+        if (result.status === 403) {
+          await refreshCalendars();
+        }
+        return { success: false, error: result.error || "Failed to delete calendar" };
+      }
+
+      setVisibleCalendarUrls((prev) => {
+        const newSet = new Set(prev);
+        newSet.delete(calendarUrl);
+        return newSet;
+      });
+      await refreshCalendars();
+      return { success: true };
+    },
+    [caldavService, refreshCalendars],
+  );
+
   const shareCalendar = useCallback(
     async (
       calendarUrl: string,
@@ -466,6 +491,7 @@ export const CalendarContextProvider = ({ children }: CalendarContextProviderPro
     createCalendar,
     updateCalendar,
     deleteCalendar,
+    deleteMailboxCalendar,
     shareCalendar,
     moveCalendar,
     goToDate,

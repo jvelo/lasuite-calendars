@@ -48,6 +48,7 @@ import {
   parseCalendarComponents,
   parseInviteSharees,
   parseInviteOrganizerEmail,
+  parseSharedUrl,
   parseCalendarOrder,
   getCalendarUrlFromEventUrl,
   asResult,
@@ -234,6 +235,12 @@ export class CalDavService {
     const sharees = parseInviteSharees(rawInvite, rawAccessMap);
     const mailboxEmail = ownerType === "MAILBOX" ? parseInviteOrganizerEmail(rawInvite) : undefined;
     const syncManaged = props?.calendarSyncManaged === "true";
+    const rawMailboxRole = (props as Record<string, unknown> | undefined)?.mailboxRole;
+    const mailboxRole = typeof rawMailboxRole === "string" ? rawMailboxRole : undefined;
+    const sharedUrl =
+      ownerType === "MAILBOX"
+        ? parseSharedUrl((props as Record<string, unknown> | undefined)?.sharedUrl, url)
+        : undefined;
 
     const displayname = (props as Record<string, unknown> | undefined)?.displayname;
     const displayName =
@@ -253,6 +260,8 @@ export class CalDavService {
       ownerType,
       mailboxEmail,
       syncManaged,
+      mailboxRole,
+      sharedUrl,
       sharees,
       ctag: (props as Record<string, string | undefined> | undefined)?.getctag,
       syncToken: (props as Record<string, string | undefined> | undefined)?.syncToken,
@@ -373,6 +382,27 @@ export class CalDavService {
     }
 
     return { success: false, error: result.error, status: result.status };
+  }
+
+  /**
+   * Delete a mailbox calendar for every user of the mailbox.
+   *
+   * The DELETE targets the owner instance (``sharedUrl``), not the
+   * user's own instance. The server allows it for a mailbox admin only.
+   */
+  async deleteMailboxCalendar(calendarUrl: string): Promise<CalDavResponse> {
+    const sharedUrl = this._calendars.get(calendarUrl)?.sharedUrl;
+    if (!sharedUrl) {
+      return { success: false, error: "Calendar has no owner URL" };
+    }
+
+    const result = await davRequest({ url: sharedUrl, method: "DELETE" });
+    if (!result.success) {
+      return { success: false, error: result.error, status: result.status };
+    }
+
+    this._calendars.delete(calendarUrl);
+    return { success: true };
   }
 
   getCalendar(calendarUrl: string): CalDavCalendar | undefined {

@@ -18,6 +18,7 @@ import {
   parseCalendarComponents,
   parseCalendarOrder,
   getCalendarUrlFromEventUrl,
+  parseSharedUrl,
 } from "../caldav-helpers";
 import { parseDavErrorMessage } from "@/features/calendar/utils/DavClient";
 
@@ -538,6 +539,22 @@ describe("caldav-helpers", () => {
         // Some endpoints may serve JSON errors; this isn't DAV.
         const body = '{"error":"bad","detail":"nope"}';
         expect(parseDavErrorMessage(body)).toBeUndefined();
+      });
+    });
+
+    describe("parseSharedUrl", () => {
+      const calendarUrl = "http://srv/caldav/calendars/users/me@example.com/abc/";
+
+      it("resolves the href against the calendar URL", () => {
+        expect(
+          parseSharedUrl({ href: "/caldav/calendars/mailboxes/team/default/" }, calendarUrl),
+        ).toBe("http://srv/caldav/calendars/mailboxes/team/default/");
+      });
+
+      it("returns undefined without an href", () => {
+        expect(parseSharedUrl(undefined, calendarUrl)).toBeUndefined();
+        expect(parseSharedUrl({}, calendarUrl)).toBeUndefined();
+        expect(parseSharedUrl({ href: "" }, calendarUrl)).toBeUndefined();
       });
     });
 

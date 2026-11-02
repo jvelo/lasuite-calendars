@@ -2,6 +2,7 @@ import {
   getCalendarDeleteMode,
   isCalendarOwner,
   belongsInMyCalendars,
+  isMailboxCalendarAdmin,
 } from "../calendar-ownership";
 import type { CalDavCalendar } from "../../services/dav/types/caldav-service";
 
@@ -85,5 +86,29 @@ describe("belongsInMyCalendars", () => {
         calendar({ resourcetype: ["collection", "calendar", "shared"], ownerType: "MAILBOX" }),
       ),
     ).toBe(true);
+  });
+});
+
+describe("isMailboxCalendarAdmin", () => {
+  const sharedUrl = "http://localhost/caldav/calendars/mailboxes/team@example.com/default/";
+  const mailboxCalendar = (overrides: Partial<CalDavCalendar>) =>
+    calendar({ ownerType: "MAILBOX", mailboxEmail: "team@example.com", sharedUrl, ...overrides });
+
+  it("is true for an admin of the mailbox", () => {
+    expect(isMailboxCalendarAdmin(mailboxCalendar({ mailboxRole: "admin" }))).toBe(true);
+  });
+
+  it("is false for a sender of the mailbox", () => {
+    expect(isMailboxCalendarAdmin(mailboxCalendar({ mailboxRole: "sender" }))).toBe(false);
+  });
+
+  it("is false without the URL of the owner instance", () => {
+    expect(
+      isMailboxCalendarAdmin(mailboxCalendar({ mailboxRole: "admin", sharedUrl: undefined })),
+    ).toBe(false);
+  });
+
+  it("is false for a calendar that a user owns", () => {
+    expect(isMailboxCalendarAdmin(calendar({ mailboxRole: "admin", sharedUrl }))).toBe(false);
   });
 });

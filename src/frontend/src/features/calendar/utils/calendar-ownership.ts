@@ -37,3 +37,13 @@ export const getCalendarDeleteMode = (calendar: CalDavCalendar): CalendarDeleteM
   }
   return calendar.sharees?.length ? "delete-shared" : "delete";
 };
+
+/**
+ * Tell if the user is an admin of the mailbox that owns the calendar.
+ * A mailbox admin can delete the calendar for every user of the mailbox,
+ * with a DELETE on the URL of the owner instance (``sharedUrl``).
+ */
+export const isMailboxCalendarAdmin = (calendar: CalDavCalendar): boolean =>
+  calendar.ownerType === "MAILBOX" &&
+  calendar.mailboxRole === "admin" &&
+  Boolean(calendar.sharedUrl);

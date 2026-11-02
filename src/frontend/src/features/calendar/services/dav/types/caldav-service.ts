@@ -64,6 +64,18 @@ export type CalDavCalendar = {
    */
   syncManaged?: boolean;
   /**
+   * Messages role of the user on the mailbox that owns the calendar:
+   * ``admin``, ``sender``, ``editor`` or ``viewer``. The value comes from
+   * ``LS:mailbox-role`` on a sync-managed instance.
+   */
+  mailboxRole?: string;
+  /**
+   * Absolute URL of the owner instance of a mailbox calendar, from
+   * ``CS:shared-url``. A DELETE on this URL deletes the calendar for
+   * every user of the mailbox. Only a mailbox admin can do it.
+   */
+  sharedUrl?: string;
+  /**
    * Sharees parsed from the ``CS:invite`` payload returned alongside
    * the standard calendar properties. The share modal reads this
    * directly instead of issuing a second PROPFIND.

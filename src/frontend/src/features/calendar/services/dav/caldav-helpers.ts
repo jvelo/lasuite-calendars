@@ -313,7 +313,12 @@ export function buildCalendarQueryXml(params: CalendarQueryParams = {}): string 
  * those levels correctly.
  *
  * ``LS:calendar-sync-managed`` marks a calendar instance that the
- * mailbox ACL sync manages.
+ * mailbox ACL sync manages. ``LS:mailbox-role`` gives the Messages role
+ * of the user on such an instance.
+ *
+ * ``CS:shared-url`` gives the URL of the owner instance of a mailbox
+ * calendar. The server does not return it for allprop, so we request it
+ * by name.
  */
 export const CALENDAR_PROPS = {
   [`${NS.CALDAV}:calendar-description`]: {},
@@ -330,6 +335,8 @@ export const CALENDAR_PROPS = {
   "LS:calendar-owner-type": {},
   "LS:share-access-map": {},
   "LS:calendar-sync-managed": {},
+  "LS:mailbox-role": {},
+  [`${NS.CALENDAR_SERVER}:shared-url`]: {},
 } as const;
 
 // ============================================================================
@@ -479,6 +486,22 @@ export function parseInviteOrganizerEmail(rawInvite: unknown): string | undefine
     return decodeURIComponent(lastSegment);
   } catch {
     return lastSegment;
+  }
+}
+
+/**
+ * Resolve the ``CS:shared-url`` href against the calendar URL.
+ *
+ * tsdav gives the property as ``{ href: "/caldav/..." }``. The result is
+ * an absolute URL on the same origin as the calendar.
+ */
+export function parseSharedUrl(rawSharedUrl: unknown, calendarUrl: string): string | undefined {
+  const href = (rawSharedUrl as { href?: unknown } | undefined)?.href;
+  if (typeof href !== "string" || !href) return undefined;
+  try {
+    return new URL(href, calendarUrl).href;
+  } catch {
+    return undefined;
   }
 }
 
