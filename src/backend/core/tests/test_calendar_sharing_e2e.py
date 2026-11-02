@@ -3957,3 +3957,270 @@ class TestSyncManagedCalendarDeletion:
 
         assert resp.status_code == 204
         assert _list_calendar_urls(sharee) == before_sharee
+
+
+CS_NS = "{http://calendarserver.org/ns/}"
+LS_NS = "{http://lasuite.numerique.gouv.fr/ns/}"
+
+
+def _propfind_mailbox_props(client, user_email, cal_uri):
+    """PROPFIND LS:mailbox-role and CS:shared-url on a calendar instance."""
+    body = (
+        '<?xml version="1.0"?>'
+        '<D:propfind xmlns:D="DAV:" '
+        'xmlns:CS="http://calendarserver.org/ns/" '
+        'xmlns:LS="http://lasuite.numerique.gouv.fr/ns/">'
+        "<D:prop><LS:mailbox-role/><CS:shared-url/></D:prop>"
+        "</D:propfind>"
+    )
+    resp = client.generic(
+        "PROPFIND",
+        f"/caldav/calendars/users/{user_email}/{cal_uri}/",
+        data=body,
+        content_type="application/xml",
+        HTTP_DEPTH="0",
+    )
+    assert resp.status_code == 207
+    return ET.fromstring(resp.content)
+
+
+def _read_mailbox_role(client, user_email, cal_uri):
+    """Return the LS:mailbox-role value of a calendar instance, or None."""
+    root = _propfind_mailbox_props(client, user_email, cal_uri)
+    prop = root.find(f".//{LS_NS}mailbox-role")
+    if prop is None:
+        return None
+    return prop.text or None
+
+
+def _read_shared_url(client, user_email, cal_uri):
+    """Return the CS:shared-url href of a calendar instance, or None."""
+    root = _propfind_mailbox_props(client, user_email, cal_uri)
+    href = root.find(f".//{CS_NS}shared-url/{{DAV:}}href")
+    if href is None:
+        return None
+    return unquote(href.text)
+
+
+def _setup_mailbox_with_roles(prefix, roles):
+    """Create a mailbox calendar synced to one user per Messages role.
+
+    Returns (mailbox_email, {role: (user, client, instance URI)}).
+    """
+    org = factories.OrganizationFactory(external_id=prefix)
+    mailbox_email = f"team@{prefix}.com"
+    members = {
+        role: _create_user_with_calendar(org, f"{role}-{prefix}") for role in roles
+    }
+    first_user = next(iter(members.values()))[0]
+    _create_mailbox_calendar(first_user, mailbox_email, org)
+    before = {role: _list_calendar_urls(m[0]) for role, m in members.items()}
+    _sync_mailbox_acls(
+        first_user,
+        [
+            {
+                "user_email": user.email,
+                "mailbox_email": mailbox_email,
+                "privilege": "read-write" if role in ("admin", "sender") else "read",
+                "role": role,
+            }
+            for role, (user, _, _) in members.items()
+        ],
+    )
+    return mailbox_email, {
+        role: (user, client, _find_shared_cal_uri(user, before_urls=before[role]))
+        for role, (user, client, _) in members.items()
+    }
+
+
+class TestMailboxCalendarAdminDelete:
+    """A mailbox admin deletes a mailbox calendar with a CalDAV DELETE.
+
+    The DELETE targets the owner instance (CS:shared-url). SabreDAV
+    grants {DAV:}unbind on the mailbox home to the users whose
+    sync-managed instance has mailbox_role = 'admin'.
+    """
+
+    def test_sync_stores_the_role_on_each_instance(self):
+        """LS:mailbox-role gives the Messages role of each member."""
+        _, members = _setup_mailbox_with_roles(
+            "mbx-role", ["admin", "sender", "viewer"]
+        )
+
+        for role, (user, client, uri) in members.items():
+            assert _read_mailbox_role(client, user.email, uri) == role
+
+    def test_sync_updates_the_role(self):
+        """A new role from Messages replaces the stored role."""
+        mailbox_email, members = _setup_mailbox_with_roles("mbx-demote", ["admin"])
+        user, client, uri = members["admin"]
+
+        _sync_mailbox_acls(
+            user,
+            [
+                {
+                    "user_email": user.email,
+                    "mailbox_email": mailbox_email,
+                    "privilege": "read-write",
+                    "role": "sender",
+                }
+            ],
+        )
+
+        assert _read_mailbox_role(client, user.email, uri) == "sender"
+        shared_url = _read_shared_url(client, user.email, uri)
+        assert client.generic("DELETE", shared_url).status_code == 403
+
+    def test_creator_instance_gets_the_role_from_the_sync(self):
+        """The instance created with the calendar gets its role."""
+        org = factories.OrganizationFactory(external_id="mbx-creator")
+        creator, creator_client, _ = _create_user_with_calendar(org, "creator-mbx")
+        mailbox_email = "team@mbx-creator.com"
+        resp = http.internal_request(
+            "POST",
+            creator,
+            "internal-api/calendars/",
+            json={
+                "email": mailbox_email,
+                "name": "Team",
+                "calendar_user_type": "MAILBOX",
+                "org_id": str(org.id),
+                "caller_email": creator.email,
+            },
+        )
+        assert resp.status_code in (200, 201)
+        creator_uri = resp.json()["caller_calendar_uri"]
+        assert _read_mailbox_role(creator_client, creator.email, creator_uri) is None
+
+        _sync_mailbox_acls(
+            creator,
+            [
+                {
+                    "user_email": creator.email,
+                    "mailbox_email": mailbox_email,
+                    "privilege": "read-write",
+                    "role": "admin",
+                }
+            ],
+        )
+
+        assert _read_mailbox_role(creator_client, creator.email, creator_uri) == (
+            "admin"
+        )
+
+    def test_sync_refuses_an_unknown_role(self):
+        """The internal sync route refuses a role outside the allowlist."""
+        org = factories.OrganizationFactory(external_id="mbx-badrole")
+        user, _, _ = _create_user_with_calendar(org, "badrole-mbx")
+        mailbox_email = "team@mbx-badrole.com"
+        _create_mailbox_calendar(user, mailbox_email, org)
+
+        resp = http.internal_request(
+            "POST",
+            user,
+            "internal-api/sync-mailbox-acls/",
+            json={
+                "shares": [
+                    {
+                        "user_email": user.email,
+                        "mailbox_email": mailbox_email,
+                        "privilege": "read-write",
+                        "role": "owner",
+                    }
+                ]
+            },
+        )
+
+        assert resp.status_code == 400
+
+    def test_shared_url_points_to_the_owner_instance(self):
+        """CS:shared-url gives the URL of the mailbox's own calendar."""
+        mailbox_email, members = _setup_mailbox_with_roles("mbx-url", ["sender"])
+        user, client, uri = members["sender"]
+
+        shared_url = _read_shared_url(client, user.email, uri)
+
+        assert shared_url == f"/caldav/calendars/mailboxes/{mailbox_email}/default/"
+
+    def test_shared_url_is_not_returned_on_a_personal_share(self):
+        """CS:shared-url is only for mailbox calendars."""
+        org = factories.OrganizationFactory(external_id="mbx-url-personal")
+        owner, owner_client, cal_path = _create_user_with_calendar(org, "owner-url")
+        sharee, sharee_client, _ = _create_user_with_calendar(org, "sharee-url")
+        shared_cal = _share_and_find(
+            owner_client, owner, _get_cal_id(cal_path), sharee, "read-write"
+        )
+
+        shared_url = _read_shared_url(
+            sharee_client, sharee.email, _instance_uri(shared_cal)
+        )
+
+        assert shared_url is None
+
+    def test_admin_delete_removes_the_calendar_for_every_member(self):
+        """An admin DELETE on the shared URL removes calendar and events."""
+        _, members = _setup_mailbox_with_roles("mbx-del", ["admin", "sender", "viewer"])
+        admin, admin_client, admin_uri = members["admin"]
+        sender, sender_client, sender_uri = members["sender"]
+        assert _put_event(
+            admin_client, admin.email, admin_uri, "mbx-del-ev"
+        ).status_code in (
+            201,
+            204,
+        )
+        shared_url = _read_shared_url(admin_client, admin.email, admin_uri)
+
+        resp = admin_client.generic("DELETE", shared_url)
+
+        assert resp.status_code == 204
+        for user, client, uri in members.values():
+            assert _propfind_calendar(client, user.email, uri).status_code == 404
+        event = _get_event(sender_client, sender.email, sender_uri, "mbx-del-ev")
+        assert event.status_code == 404
+        assert admin_client.generic("PROPFIND", shared_url).status_code == 404
+
+    @pytest.mark.parametrize("role", ["sender", "viewer"])
+    def test_non_admin_delete_is_refused(self, role):
+        """A sender or a viewer cannot delete the mailbox calendar."""
+        _, members = _setup_mailbox_with_roles(f"mbx-nodel-{role}", [role])
+        user, client, uri = members[role]
+        shared_url = _read_shared_url(client, user.email, uri)
+
+        resp = client.generic("DELETE", shared_url)
+
+        assert resp.status_code == 403
+        assert _propfind_calendar(client, user.email, uri).status_code == 207
+
+    def test_admin_own_instance_delete_is_still_refused(self):
+        """The admin's own sync-managed copy keeps its protection."""
+        _, members = _setup_mailbox_with_roles("mbx-own", ["admin"])
+        user, client, uri = members["admin"]
+
+        resp = _delete_calendar(client, user.email, uri)
+
+        assert resp.status_code == 403
+
+    def test_mailbox_role_cannot_be_changed_by_proppatch(self):
+        """A client cannot write LS:mailbox-role."""
+        _, members = _setup_mailbox_with_roles("mbx-patch", ["sender"])
+        user, client, uri = members["sender"]
+        body = (
+            '<?xml version="1.0"?>'
+            '<D:propertyupdate xmlns:D="DAV:" '
+            'xmlns:LS="http://lasuite.numerique.gouv.fr/ns/">'
+            "<D:set><D:prop><LS:mailbox-role>admin</LS:mailbox-role>"
+            "</D:prop></D:set></D:propertyupdate>"
+        )
+
+        resp = client.generic(
+            "PROPPATCH",
+            f"/caldav/calendars/users/{user.email}/{uri}/",
+            data=body,
+            content_type="application/xml",
+        )
+
+        assert resp.status_code == 207
+        assert b"403" in resp.content
+        assert _read_mailbox_role(client, user.email, uri) == "sender"
+        shared_url = _read_shared_url(client, user.email, uri)
+        assert client.generic("DELETE", shared_url).status_code == 403

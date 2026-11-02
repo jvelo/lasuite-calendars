@@ -284,6 +284,7 @@ class SetupService:
                     "user_email": user.email,
                     "mailbox_email": mb_email,
                     "privilege": ROLE_TO_PRIVILEGE.get(mb_role, "read"),
+                    "role": mb_role if mb_role in ROLE_TO_PRIVILEGE else None,
                 }
             )
 
@@ -341,6 +342,7 @@ class SetupService:
                     "user_email": mb_user_email,
                     "mailbox_email": mailbox_email,
                     "privilege": ROLE_TO_PRIVILEGE.get(mb_user_role, "read"),
+                    "role": mb_user_role if mb_user_role in ROLE_TO_PRIVILEGE else None,
                 }
             )
 
@@ -399,7 +401,7 @@ class SetupService:
 
         Args:
             caller: User object for authenticating the internal API call.
-            shares: Flat list of {user_email, mailbox_email, privilege}.
+            shares: Flat list of {user_email, mailbox_email, privilege, role}.
                 Each entry grants access at the mailbox level — the
                 CalDAV side fans it out to every owner calendar under
                 the mailbox principal.
