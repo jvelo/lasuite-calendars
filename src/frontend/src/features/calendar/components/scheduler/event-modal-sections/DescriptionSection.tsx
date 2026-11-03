@@ -1,6 +1,7 @@
 import { useTranslation } from "react-i18next";
 import { TextArea, Icon, IconType } from "@gouvfr-lasuite/ui-components";
 import { SectionRow } from "./SectionRow";
+import { useFocusOnOpen } from "./useFocusOnOpen";
 
 interface DescriptionSectionProps {
   description: string;
@@ -8,6 +9,7 @@ interface DescriptionSectionProps {
   alwaysOpen?: boolean;
   isExpanded?: boolean;
   onToggle?: () => void;
+  focusOnOpen?: boolean;
 }
 
 export const DescriptionSection = ({
@@ -16,11 +18,14 @@ export const DescriptionSection = ({
   alwaysOpen,
   isExpanded,
   onToggle,
+  focusOnOpen = false,
 }: DescriptionSectionProps) => {
   const { t } = useTranslation();
+  const sectionRef = useFocusOnOpen(focusOnOpen);
 
   return (
     <SectionRow
+      ref={sectionRef}
       icon={<Icon name="notes" type={IconType.OUTLINED} aria-hidden />}
       label={t("calendar.event.sections.addDescription")}
       isEmpty={!description}

@@ -27,7 +27,12 @@ import { Meet, Pin, Calendar, Edit, Lock } from "@gouvfr-lasuite/ui-components/i
 
 import type { IcsEvent, IcsOrganizer } from "ts-ics";
 
-import type { EventModalProps, RecurringDeleteOption, RecurringEditOption } from "./types";
+import type {
+  EventFormSectionId,
+  EventModalProps,
+  RecurringDeleteOption,
+  RecurringEditOption,
+} from "./types";
 
 export const EventModal = ({
   isOpen,
@@ -53,6 +58,9 @@ export const EventModal = ({
   const [pendingRsvpStatus, setPendingRsvpStatus] = useState<
     "ACCEPTED" | "TENTATIVE" | "DECLINED" | null
   >(null);
+  // The section the user opens from a pill. Only that section takes the
+  // focus; a section the form opens by itself must not steal it.
+  const [userOpenedSection, setUserOpenedSection] = useState<EventFormSectionId | null>(null);
 
   const { resources: availableResources } = useResourcePrincipals();
 
@@ -152,6 +160,17 @@ export const EventModal = ({
     )?.partstat ||
     currentUserAttendee?.partstat ||
     "NEEDS-ACTION";
+
+  const handleTogglePill = (sectionId: EventFormSectionId) => {
+    setUserOpenedSection(form.isSectionExpanded(sectionId) ? null : sectionId);
+    form.toggleSection(sectionId);
+  };
+
+  // The modal stays mounted when closed. Clear the flag so the next open
+  // does not focus a section from the previous session.
+  useEffect(() => {
+    if (!isOpen) setUserOpenedSection(null);
+  }, [isOpen]);
 
   const showError = (message: string) => {
     addToast(
@@ -344,7 +363,7 @@ export const EventModal = ({
             <SectionPills
               pills={pills}
               isSectionExpanded={form.isSectionExpanded}
-              onToggle={form.toggleSection}
+              onToggle={handleTogglePill}
             />
             <div className="event-modal__footer-actions">
               {mode === "edit" && onDelete ? (
@@ -499,6 +518,7 @@ export const EventModal = ({
             <DescriptionSection
               description={form.description}
               onChange={form.setDescription}
+              focusOnOpen={userOpenedSection === "description"}
               alwaysOpen
             />
           )}
