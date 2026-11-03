@@ -237,10 +237,19 @@ This is a per-calendar-instance property — each user controls their own
 view. If someone shares a birthday calendar, the sharee can mark it
 transparent on their side without affecting the owner's setting.
 
+Calendars you own start opaque. Calendars shared with you start
+transparent, so they do not make you busy. This also applies to
+mailbox calendars that the Messages sync shares with you. To count
+one in your availability, mark it opaque. The sync keeps your choice.
+The mailbox's own instance stays opaque, so the mailbox's availability
+does not change. Events you attend still make you busy: the invitation
+goes to a calendar you own.
+
 ### UI
 
 The "Include in availability" checkbox in the calendar edit modal
-toggles this property via PROPPATCH. Default is checked (opaque).
+toggles this property via PROPPATCH. It is checked (opaque) for
+calendars you own and unchecked for shared and mailbox calendars.
 
 Apple Calendar exposes this as "Show in availability" in calendar
 settings. Thunderbird and DAVx5 also support it natively.

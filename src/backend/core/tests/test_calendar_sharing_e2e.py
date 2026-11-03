@@ -6,6 +6,7 @@ Requires: CalDAV server running.
 
 # pylint: disable=no-member,broad-exception-caught,unused-variable,too-many-lines
 
+import re
 import secrets
 from datetime import datetime, timedelta
 from unittest import mock
@@ -4054,3 +4055,112 @@ class TestMailboxCalendarAdminDeletion:
         assert any(
             url.rstrip("/").endswith(cal_id) for url in _list_calendar_urls(owner)
         )
+
+
+def _freebusy_of(client, user_email, target_email):
+    """Ask for the free/busy of target_email in the next two days."""
+    dtstart = datetime.now().strftime("%Y%m%dT%H%M%SZ")
+    dtend = (datetime.now() + timedelta(days=2)).strftime("%Y%m%dT%H%M%SZ")
+    ical = (
+        "BEGIN:VCALENDAR\r\n"
+        "VERSION:2.0\r\n"
+        "PRODID:-//Test//Test//EN\r\n"
+        "METHOD:REQUEST\r\n"
+        "BEGIN:VFREEBUSY\r\n"
+        f"UID:fb-{secrets.token_hex(4)}\r\n"
+        f"DTSTART:{dtstart}\r\n"
+        f"DTEND:{dtend}\r\n"
+        f"ORGANIZER:mailto:{user_email}\r\n"
+        f"ATTENDEE:mailto:{target_email}\r\n"
+        "END:VFREEBUSY\r\n"
+        "END:VCALENDAR\r\n"
+    )
+    resp = client.generic(
+        "POST",
+        f"/caldav/calendars/users/{user_email}/outbox/",
+        data=ical,
+        content_type="text/calendar",
+    )
+    assert resp.status_code == 200, resp.content.decode()[:500]
+    return resp.content.decode()
+
+
+def _is_busy(freebusy_response):
+    """Return True when a free/busy response has a busy period."""
+    return re.search(r"^FREEBUSY", freebusy_response, re.MULTILINE) is not None
+
+
+def _set_schedule_transp(client, user_email, cal_uri, value):
+    """Set schedule-calendar-transp ("opaque" or "transparent")."""
+    body = (
+        '<?xml version="1.0" encoding="utf-8"?>'
+        '<D:propertyupdate xmlns:D="DAV:" '
+        'xmlns:C="urn:ietf:params:xml:ns:caldav">'
+        "<D:set><D:prop>"
+        f"<C:schedule-calendar-transp><C:{value}/></C:schedule-calendar-transp>"
+        "</D:prop></D:set>"
+        "</D:propertyupdate>"
+    )
+    resp = client.generic(
+        "PROPPATCH",
+        f"/caldav/calendars/users/{user_email}/{cal_uri}/",
+        data=body,
+        content_type="application/xml",
+    )
+    assert resp.status_code == 207, resp.content.decode()[:500]
+    assert "200 OK" in resp.content.decode()
+
+
+class TestMailboxCalendarTransparency:
+    """Mailbox calendars do not make their users busy by default.
+
+    The mailbox sync gives each user a transparent instance, like a
+    SabreDAV share. The user can make it opaque to count it in their
+    availability.
+    """
+
+    def test_mailbox_event_does_not_make_members_busy(self):
+        """The creator instance and the synced instance are transparent."""
+        users, _, uris = _setup_mailbox_members(
+            "transp-default", "creator", "member", "querier"
+        )
+        (creator, creator_client, _), (member, _, _), (querier, q_client, _) = users
+        _put_event(
+            creator_client, creator.email, uris[creator.email], "transp-ev", "Team"
+        )
+
+        assert not _is_busy(_freebusy_of(q_client, querier.email, creator.email))
+        assert not _is_busy(_freebusy_of(q_client, querier.email, member.email))
+
+    def test_opaque_choice_makes_member_busy_and_survives_sync(self):
+        """A member includes the calendar in their availability.
+
+        A later sync that changes their access keeps the choice.
+        """
+        users, mailbox_email, uris = _setup_mailbox_members(
+            "transp-opaque", "creator", "member", "querier"
+        )
+        (creator, creator_client, _), (member, member_client, _) = users[:2]
+        querier, q_client, _ = users[2]
+        _put_event(
+            creator_client, creator.email, uris[creator.email], "opaque-ev", "Team"
+        )
+
+        _set_schedule_transp(member_client, member.email, uris[member.email], "opaque")
+
+        assert _is_busy(_freebusy_of(q_client, querier.email, member.email))
+
+        for privilege in ("read", "read-write"):
+            _sync_mailbox_acls(
+                creator,
+                [
+                    {
+                        "user_email": member.email,
+                        "mailbox_email": mailbox_email,
+                        "privilege": privilege,
+                    }
+                ],
+            )
+
+        assert _is_busy(_freebusy_of(q_client, querier.email, member.email))
+        assert not _is_busy(_freebusy_of(q_client, querier.email, creator.email))
