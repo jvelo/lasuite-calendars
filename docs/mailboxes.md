@@ -242,6 +242,11 @@ To remove the calendar from a user's list, remove their access to the
 mailbox in Messages. These instances expose `LS:calendar-sync-managed`,
 so clients can disable the delete action. Manual shares do not have it.
 
+Sync-managed instances start transparent, like other shared calendars.
+Mailbox events do not make the user busy. The user can include the
+calendar in their availability; the sync keeps that choice. See
+[freebusy.md](freebusy.md#calendar-level-transparency-rfc-6638).
+
 A mailbox admin can delete a mailbox calendar for every user with
 `DELETE /api/v1.0/calendars/mailboxes/{mailbox_email}/{calendar_uri}/`.
 `calendar_uri` is the URI of the admin's own instance. The calendar,
